@@ -48,10 +48,3 @@ RUN \
 		vim
 
 USER "${username}"
-
-COPY "config.ta[r]" "/home/${username}"
-RUN \
-	cd "/home/${username}"; \
-	tar -xf 'config.tar'; \
-	patch '.bashrc' '.bashrc.patch'; \
-	rm -f '.bashrc.patch' 'config.tar'

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+tar -xf 'config.tar' -C "${HOME}"
+patch "${HOME}/.bashrc" "${HOME}/.bashrc.patch"
+rm -f "${HOME}/.bashrc.patch"
+chmod 'u=rwx,go=' "${HOME}/.gnupg"
+chmod 'u=rwx,go=' "${HOME}/.ssh"
+echo done

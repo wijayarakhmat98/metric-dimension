@@ -4,5 +4,6 @@
 	},
 	"runArgs": [
 		"--platform=linux/amd64"
-	]
+	],
+	"onCreateCommand": ".devcontainer/config"
 }
