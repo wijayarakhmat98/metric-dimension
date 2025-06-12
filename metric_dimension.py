@@ -25,8 +25,11 @@ def distance_similarity_permute(p):
 		a = np.tile(c, (2**n, 1))
 		a[np.arange(2**n)[:, None], idx] &= mask
 		t.append(a)
-	t = np.vstack(t)
-	t = np.unique(t[np.any(t, axis=1)], axis=0)
+	if len(t) > 0:
+		t = np.vstack(t)
+		t = np.unique(t[np.any(t, axis=1)], axis=0)
+	else:
+		t = np.array([[False for _ in range(p.shape[1])]])
 	return t
 
 def distance_similarity_group(t):
