@@ -17,7 +17,10 @@ def distance_similarity_prune(d):
 	n = d.shape[0]
 	broadcast = distance_similarity_broadcast(d)
 	mask = distance_similarity_mask(d)
-	return broadcast[mask].reshape(-1, n)
+	prune = broadcast[mask].reshape(-1, n)
+	prune = np.unique(prune, axis=0)
+	prune = prune[np.any(prune, axis=1)]
+	return prune
 
 def create_node_boolean(m):
 	n = m.shape[0]
