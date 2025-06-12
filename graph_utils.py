@@ -1,7 +1,11 @@
 #!/usr/bin/env python3.13
 
+import networkx as nx
 import numpy as np
 from scipy.sparse.csgraph import floyd_warshall, connected_components
+
+def graph6_decode(s):
+	return nx.to_numpy_array(nx.from_graph6_bytes(s.encode()), dtype=bool)
 
 def is_undirected(m):
 	return np.array_equal(m, m.T)
