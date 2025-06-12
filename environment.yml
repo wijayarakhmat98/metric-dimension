@@ -1,4 +1,6 @@
 dependencies:
+  - networkx
+  - numpy
   - python
   - pip:
     - z3-solver
