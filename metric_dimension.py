@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.13
 
 import numpy as np
+import z3
 
 def distance_similarity_broadcast(d):
 	return d[None, :, :] == d[:, None, :]
@@ -17,3 +18,10 @@ def distance_similarity_prune(d):
 	broadcast = distance_similarity_broadcast(d)
 	mask = distance_similarity_mask(d)
 	return broadcast[mask].reshape(-1, n)
+
+def create_node_boolean(m):
+	n = m.shape[0]
+	return np.array([z3.Bool('x{}'.format(i+1)) for i in range(n)])
+
+def apply_boolean_similarity(v, p):
+	return [z3.And(*v[mask]) for mask in p]
