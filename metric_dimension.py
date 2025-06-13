@@ -10,10 +10,9 @@ def create_node_boolean(m):
 def distance_similarity_broadcast(d):
 	return d[None, :, :] == d[:, None, :]
 
-def distance_similarity_prune(d):
-	p = distance_similarity_broadcast(d)
-	p = p.reshape(-1, p.shape[2])
-	p = np.unique(p[np.any(p, axis=1) & ~np.all(p, axis=1)], axis=0)
+def distance_similarity_prune(b):
+	p = np.unique(b.reshape(-1, b.shape[2]), axis=0)
+	p = p[~np.all(p, axis=1)]
 	return p
 
 def distance_similarity_permute(p):
@@ -25,11 +24,7 @@ def distance_similarity_permute(p):
 		a = np.tile(c, (2**n, 1))
 		a[np.arange(2**n)[:, None], idx] &= mask
 		t.append(a)
-	if len(t) > 0:
-		t = np.vstack(t)
-		t = np.unique(t[np.any(t, axis=1)], axis=0)
-	else:
-		t = np.array([[False for _ in range(p.shape[1])]])
+	t = np.unique(np.vstack(t), axis=0)
 	return t
 
 def distance_similarity_group(t):
