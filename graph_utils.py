@@ -7,6 +7,9 @@ from scipy.sparse.csgraph import floyd_warshall, connected_components
 def graph6_decode(s):
 	return nx.to_numpy_array(nx.from_graph6_bytes(s.encode()), dtype=bool)
 
+def graph6_encode(m):
+	return nx.to_graph6_bytes(nx.from_numpy_array(m.astype(int))).decode().strip()
+
 def is_undirected(m):
 	return np.array_equal(m, m.T)
 
