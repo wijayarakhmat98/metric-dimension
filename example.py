@@ -13,6 +13,8 @@ def main():
 		[0, 1, 0, 0, 0]
 	])
 	print(m, '\n')
+	g = graph_utils.graph6_encode(m)
+	print(g, '\n')
 	d = graph_utils.distance_matrix(m)
 	print(d, '\n')
 	v = metric_dimension.create_node_boolean(m)
