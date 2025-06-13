@@ -5,7 +5,7 @@
 	"runArgs": [
 		"--platform=linux/amd64"
 	],
-	"onCreateCommand": ".devcontainer/config",
+	"onCreateCommand": ".devcontainer/environment; .devcontainer/config",
 	"customizations": {
 		"vscode": {
 			"extensions": [

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+micromamba env -y create -f 'environment.yml' -n 'z3'
+
+printf "\nmicromamba activate 'z3'\n" >> "${HOME}/.bashrc"
