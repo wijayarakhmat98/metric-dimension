@@ -6,15 +6,5 @@
 	"files.eol": "\n",
 	"files.insertFinalNewline": true,
 	"files.trimFinalNewlines": true,
-	"files.trimTrailingWhitespace": true,
-	"latex-workshop.latex.tools": [
-		{
-			"name": "latexmk",
-			"command": "yes-latexmk-f",
-			"args": [
-				"-outdir=%WORKSPACE_FOLDER%/build",
-				"src/proposal.tex"
-			]
-		}
-	]
+	"files.trimTrailingWhitespace": true
 }
