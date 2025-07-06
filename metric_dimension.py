@@ -58,9 +58,9 @@ def find_least(v, u):
 	return False, []
 
 def resolving_representation(v, w, d):
-	return d[np.array([b in w for b in v]), :]
+	return d[:, np.array([b in w for b in v])]
 
 def valid(r):
-	unique, idx = np.unique(r, axis=1, return_index=True)
-	unique = unique[:, np.argsort(idx)]
+	unique, idx = np.unique(r, axis=0, return_index=True)
+	unique = unique[np.argsort(idx)]
 	return np.array_equal(r, unique)
