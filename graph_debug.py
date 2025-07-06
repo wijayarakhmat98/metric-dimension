@@ -71,12 +71,28 @@ def main(args):
 		r = metric_dimension.resolving_representation(v, w, d)
 		if 'r' in info: print(r, '\n')
 		if 'c' in info: print(metric_dimension.valid(r), '\n')
+		n = metric_dimension.find_enumerate(v, u, len(w))
+		if 'n' in info: print(n, '\n')
+		nr = [metric_dimension.resolving_representation(v, w, d) for w in n]
+		if 'nr' in info:
+			for r in nr:
+				print(r, '\n')
+		nc = [metric_dimension.valid(r) for r in nr]
+		if 'nc' in info: print(nc, '\n')
 	ew = metric_dimension.find_least(v, eu)
 	if 'ew' in info: print(ew, '\n')
 	if len(ew) != 0:
 		er = metric_dimension.resolving_representation(v, ew, e)
 		if 'er' in info: print(er, '\n')
 		if 'ec' in info: print(metric_dimension.valid(er), '\n')
+		en = metric_dimension.find_enumerate(v, eu, len(ew))
+		if 'en' in info: print(en, '\n')
+		enr = [metric_dimension.resolving_representation(v, ew, e) for ew in en]
+		if 'enr' in info:
+			for er in enr:
+				print(er, '\n')
+		enc = [metric_dimension.valid(r) for er in enr]
+		if 'enc' in info: print(enc, '\n')
 
 if __name__ == '__main__':
 	main(sys.argv[1:])

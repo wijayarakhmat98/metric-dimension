@@ -57,6 +57,19 @@ def find_least(v, u):
 			return w
 	return []
 
+def find_enumerate(v, u, n):
+	s = z3.Solver()
+	s.add(z3.Not(z3.Or(apply_boolean_similarity(v, u[n]))))
+	s.add(z3.AtLeast(*v, n))
+	s.add(z3.AtMost(*v, n))
+	ws = []
+	while s.check() == z3.sat:
+		model = s.model()
+		w = [b for b in v if z3.is_true(model.evaluate(b))]
+		s.add(z3.Not(z3.And(w)))
+		ws.append(w)
+	return ws
+
 def resolving_representation(v, w, d):
 	return d[:, np.array([b in w for b in v])]
 
