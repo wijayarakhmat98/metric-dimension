@@ -1,1 +1,1 @@
-('A_', 1, 0.02139760900172405)
+{'graph': 'A_', 'vertex': {'dimension': 1, 'time': 0.0045155869993322995, 'enumerate': {'n': 2, 'resolving': [{'set': ['x1'], 'is_sane': True}, {'set': ['x2'], 'is_sane': True}], 'time': 0.0018023880002147052}}, 'edge': {'dimension': 1, 'time': 0.0007964129999891156, 'enumerate': {'n': 2, 'resolving': [{'set': ['x1'], 'is_sane': True}, {'set': ['x2'], 'is_sane': True}], 'time': 0.0012620449997484684}}, 'time': 0.03523496600064391}
