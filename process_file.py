@@ -1,19 +1,11 @@
 #!/usr/bin/env python3.13
 
-import copy
 import graph_utils
-import json
 import metric_dimension
 import multiprocessing
-import re
 import sys
 from time import perf_counter
-
-def file_to_list(filename):
-	with open(filename, 'r') as file:
-		ss = file.readlines()
-		ss = [s.strip() for s in ss]
-		return ss
+import utils
 
 def find_metric_dimension(s):
 	start = perf_counter()
@@ -70,12 +62,7 @@ def find_metric_dimension(s):
 		},
 		'time': end - start
 	}
-	infos = copy.deepcopy(info)
-	infos['vertex']['enumerate']['resolving'] = [str(s) for s in infos['vertex']['enumerate']['resolving']]
-	infos['edge']['enumerate']['resolving'] = [str(s) for s in infos['edge']['enumerate']['resolving']]
-	infos = json.dumps(infos, indent=2)
-	infos = re.sub(r'"({\'set.*)"', lambda m: re.sub(r"'", r'"', m.group(1)), infos)
-	return {'raw': info, 'str': infos}
+	return {'raw': info, 'str': utils.info_stringify(info)}
 
 def main(args):
 	if len(args) != 2:
@@ -86,7 +73,7 @@ def main(args):
 	graph6_filename = args[0]
 	output_filename = args[1]
 
-	ss = file_to_list(graph6_filename)
+	ss = utils.file_to_list(graph6_filename)
 
 	with open(output_filename, 'w') as output_file:
 		with multiprocessing.Pool() as pool:
