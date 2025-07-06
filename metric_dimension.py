@@ -16,7 +16,7 @@ def distance_similarity_prune(b):
 	return p
 
 def distance_similarity_permute(p):
-	t = []
+	t = [p]
 	for c in p:
 		idx = np.where(c)[0]
 		n = len(idx)

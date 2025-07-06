@@ -74,7 +74,7 @@ def find_metric_dimension(s):
 	infos['vertex']['enumerate']['resolving'] = [str(s) for s in infos['vertex']['enumerate']['resolving']]
 	infos['edge']['enumerate']['resolving'] = [str(s) for s in infos['edge']['enumerate']['resolving']]
 	infos = json.dumps(infos, indent=2)
-	infos = re.sub(r'"({\'set.*)"', r'\1', infos)
+	infos = re.sub(r'"({\'set.*)"', lambda m: re.sub(r"'", r'"', m.group(1)), infos)
 	return {'raw': info, 'str': infos}
 
 def main(args):
