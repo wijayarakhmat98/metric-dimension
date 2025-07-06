@@ -24,3 +24,13 @@ def distance_matrix(m, directed=False, connected=True, weighted=False):
 	if not connected:
 		d[np.isinf(d)] = -1
 	return d.astype(int)
+
+def edge_distance_matrix(m, d, weighted=False):
+	l = np.argwhere(m)
+	e = np.zeros((d.shape[0], m.sum()), dtype=np.float64)
+	for i in range(d.shape[0]):
+		for r, (j, k) in enumerate(l):
+			e[i, r] = min(d[i, j], d[i, k])
+	if weighted:
+		return e, l
+	return e.astype(int), l
