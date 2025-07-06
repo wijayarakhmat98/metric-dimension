@@ -143,7 +143,7 @@ def graph6_draw_forward(args):
 	utils.graph6_draw(*args)
 
 def main(args):
-	root_html = 'html'
+	root_html = 'docs'
 	if os.path.exists(root_html):
 		shutil.rmtree(root_html)
 	os.makedirs(root_html)
