@@ -23,8 +23,6 @@ def main(args):
 		print('\tet\tedge distance similarity (permute)')
 		print('\tu\tdistance similarity (group)')
 		print('\teu\tedge distance similarity (group)')
-		print('\tf\tsatisfiable')
-		print('\tef\tedge satisfiable')
 		print('\tw\tresolving set')
 		print('\tew\tedge resolving set')
 		print('\tr\tresolving representation')
@@ -67,17 +65,15 @@ def main(args):
 		for i, c in enumerate(eu):
 			print(i)
 			print(c, '\n')
-	found, w = metric_dimension.find_least(v, u)
-	if 'f' in info: print(found, '\n')
+	w = metric_dimension.find_least(v, u)
 	if 'w' in info: print(w, '\n')
-	if found:
+	if len(w) != 0:
 		r = metric_dimension.resolving_representation(v, w, d)
 		if 'r' in info: print(r, '\n')
 		if 'c' in info: print(metric_dimension.valid(r), '\n')
-	efound, ew = metric_dimension.find_least(v, eu)
-	if 'ef' in info: print(efound, '\n')
+	ew = metric_dimension.find_least(v, eu)
 	if 'ew' in info: print(ew, '\n')
-	if efound:
+	if len(ew) != 0:
 		er = metric_dimension.resolving_representation(v, ew, e)
 		if 'er' in info: print(er, '\n')
 		if 'ec' in info: print(metric_dimension.valid(er), '\n')

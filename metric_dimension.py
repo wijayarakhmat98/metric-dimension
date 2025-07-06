@@ -45,17 +45,17 @@ def find_exact(v, u, n):
 	s.add(z3.AtLeast(*v, n))
 	s.add(z3.AtMost(*v, n))
 	if s.check() == z3.unsat:
-		return False, []
+		return []
 	model = s.model()
 	w = [b for b in v if z3.is_true(model.evaluate(b))]
-	return True, w
+	return w
 
 def find_least(v, u):
 	for i in range(1, len(u)):
-		found, w = find_exact(v, u, i)
-		if found:
-			return True, w
-	return False, []
+		w = find_exact(v, u, i)
+		if len(w) != 0:
+			return w
+	return []
 
 def resolving_representation(v, w, d):
 	return d[:, np.array([b in w for b in v])]
