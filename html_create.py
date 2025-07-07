@@ -184,8 +184,8 @@ def main(args):
 				d['filename_img'],
 				d['filename_info'],
 				d['graph'],
-				d['vertex']['enumerate']['n'],
-				d['edge']['enumerate']['n']
+				d['vertex']['dimension'],
+				d['edge']['dimension']
 			)
 
 			with open('{}/{}/{}'.format(root_html, root_gallery, d['filename_info']), 'w') as file_info:
@@ -199,8 +199,8 @@ def main(args):
 					html_template_info_figure.format(
 						'../{}'.format(d['filename_img']),
 						d['graph'],
-						d['vertex']['enumerate']['n'],
-						d['edge']['enumerate']['n']
+						d['vertex']['dimension'],
+						d['edge']['dimension']
 					),
 					utils.info_stringify(dd)
 				))
