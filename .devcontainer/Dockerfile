@@ -45,6 +45,7 @@ RUN \
 		man \
 		openssh-client \
 		patch \
-		vim
+		vim \
+		xz-utils
 
 USER "${username}"
