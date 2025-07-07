@@ -85,7 +85,7 @@ html_template_gallery = '''
 html_template_gallery_figure = '''
 <figure>
 	<div>
-		<img src="{}">
+		<img src="{}" loading="lazy">
 	</div>
 	<figcaption>
 		<a href="{}"><strong>{}</strong><br></a>
