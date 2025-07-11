@@ -12,7 +12,6 @@ def ast_read(r):
 	r = ast.literal_eval(r)
 	return [
 		r['graph'],
-		utils.hash(r['graph']),
 		r['vertex']['dimension'],
 		r['edge']['dimension']
 	]
@@ -139,8 +138,17 @@ const template_figure = `
 	</figcaption>
 `
 
-export default function main(result) {
-	for (const [graph, hash, d_vertex, d_edge] of result) {
+async function sha256(str) {
+	const encoder = new TextEncoder();
+	const data = encoder.encode(str);
+	const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+	return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function main(result) {
+	for (const [graph, d_vertex, d_edge] of result) {
+		const hash = await sha256(graph)
 		const f = document.createElement('figure')
 		f.innerHTML = template_figure
 			.replace('{src}', `${hash}.svg`)
@@ -152,6 +160,8 @@ export default function main(result) {
 		document.body.appendChild(f)
 	}
 }
+
+export default main
 '''
 
 if __name__ == '__main__':
