@@ -49,43 +49,30 @@ template_html = '''
 		<title>{}</title>
 	</head>
 	<body>
-		<div class="column">
-			<figure>
-				<img src="{}" alt="{}">
-			</figure>
-			<div>
-				<pre>{}</pre>
-			</div>
-		</div>
+		<img src="{}" alt="{}">
+		<pre>{}</pre>
 	</body>
 </html>
 '''
 
 template_css = '''
-.column {
+body {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
+	align-items: start;
 	gap: 1em;
-}
-
-.column div {
-	display: inline-block;
-}
-
-figure {
-	width: 15em;
-	height: 18em;
-	display: flex;
-	align-items: center;
-	justify-content: center;
 	margin: 1em;
 }
 
-figure img {
-	max-width: 100%;
-	max-height: 100%;
-	object-fit: contain;
+body * {
+	border: 1px solid black;
+	margin: 0;
+	padding: 1em;
+}
+
+img {
+	max-width: 15em;
 }
 '''
 
