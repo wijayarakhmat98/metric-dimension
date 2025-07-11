@@ -33,4 +33,6 @@ def info_stringify(info):
 	infos['edge']['enumerate']['resolving'] = [str(s) for s in infos['edge']['enumerate']['resolving']]
 	infos = json.dumps(infos, indent=2)
 	infos = re.sub(r'"({\'set.*)"', lambda m: re.sub(r"'", r'"', m.group(1)), infos)
+	infos = re.sub('True', 'true', infos)
+	infos = re.sub('False', 'false', infos)
 	return infos
