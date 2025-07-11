@@ -65,7 +65,7 @@ body {
 	margin: 1em;
 }
 
-body * {
+body > * {
 	border: 1px solid black;
 	margin: 0;
 	padding: 1em;
