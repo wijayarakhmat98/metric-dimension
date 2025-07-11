@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.13
 
+import base64
 import copy
 import hashlib
 import json
@@ -14,7 +15,9 @@ def file_to_list(filename):
 		return ss
 
 def hash(s):
-	return hashlib.sha256(s.encode()).hexdigest()
+	sha256_hash = hashlib.sha256(s.encode()).digest()
+	b64_encoded = base64.urlsafe_b64encode(sha256_hash).decode()
+	return b64_encoded[:10]
 
 def graph6_draw(s, filename):
 	g = nx.from_graph6_bytes(s.encode())

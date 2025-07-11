@@ -2,4 +2,4 @@ config.tar
 docs
 __pycache__
 
-result/graph9c.txt
+result/*.txt
