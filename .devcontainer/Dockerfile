@@ -47,6 +47,11 @@ RUN \
 USER root
 
 RUN \
+	sed -i 's/main/main contrib non-free-firmware/' /etc/apt/sources.list.d/debian.sources && \
+	apt-get update && \
+	apt-get -y install ttf-mscorefonts-installer
+
+RUN \
 	apt-get -y install \
 		git \
 		gnupg \
