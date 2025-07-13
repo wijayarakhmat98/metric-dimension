@@ -5,6 +5,8 @@ from functools import partial
 import multiprocessing
 import os
 import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import utils
 
 def info_create(r, root_output, template_html, filename_css):
