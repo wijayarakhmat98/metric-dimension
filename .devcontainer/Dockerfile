@@ -24,6 +24,10 @@ ENV LC_ALL="en_US.UTF-8"
 
 RUN \
 	apt-get -y install \
+		texlive-full
+
+RUN \
+	apt-get -y install \
 		bzip2 \
 		curl
 
