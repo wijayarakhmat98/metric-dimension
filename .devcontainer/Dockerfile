@@ -39,6 +39,11 @@ RUN \
 	bash -lc 'micromamba config append channels conda-forge' && \
 	bash -lc 'micromamba config set channel_priority strict'
 
+COPY 'environment.yml' '/tmp'
+RUN \
+	bash -lc 'micromamba env -y create -f /tmp/environment.yml -n z3' && \
+	printf "\nmicromamba activate 'z3'\n" >> "${HOME}/.bashrc"
+
 USER root
 
 RUN \
@@ -51,5 +56,9 @@ RUN \
 		patch \
 		vim \
 		xz-utils
+
+RUN \
+	mkdir /workspaces && \
+	chmod a+rwx /workspaces
 
 USER "${username}"

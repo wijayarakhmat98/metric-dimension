@@ -1,9 +1,1 @@
-dependencies:
-  - matplotlib
-  - networkx
-  - numpy
-  - python
-  - pygraphviz
-  - scipy
-  - pip:
-    - z3-solver
+.devcontainer/environment.yml
