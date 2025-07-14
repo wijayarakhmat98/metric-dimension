@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.13
+#!/usr/bin/env python3.12
 
 import networkx as nx
 import numpy as np

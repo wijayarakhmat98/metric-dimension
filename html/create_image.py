@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.13
+#!/usr/bin/env python3.12
 
 from functools import partial
 import multiprocessing
