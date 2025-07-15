@@ -51,7 +51,7 @@ def find_exact(v, u, n):
 	return w
 
 def find_least(v, u):
-	for i in range(1, len(u)):
+	for i in range(1, len(v)):
 		w = find_exact(v, u, i)
 		if len(w) != 0:
 			return w
