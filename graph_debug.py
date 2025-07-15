@@ -19,10 +19,6 @@ def main(args):
 		print('\teb\tedge distance similarity (broadcast)')
 		print('\tp\tdistance similarity (prune)')
 		print('\tep\tedge distance similarity (prune)')
-		print('\tt\tdistance similarity (permute)')
-		print('\tet\tedge distance similarity (permute)')
-		print('\tu\tdistance similarity (group)')
-		print('\teu\tedge distance similarity (group)')
 		print('\tw\tresolving set')
 		print('\tew\tedge resolving set')
 		print('\tr\tresolving representation')
@@ -51,27 +47,13 @@ def main(args):
 	if 'p' in info: print(p, '\n')
 	ep = metric_dimension.distance_similarity_prune(eb)
 	if 'ep' in info: print(ep, '\n')
-	t = metric_dimension.distance_similarity_permute(p)
-	if 't' in info: print(t, '\n')
-	et = metric_dimension.distance_similarity_permute(ep)
-	if 'et' in info: print(et, '\n')
-	u = metric_dimension.distance_similarity_group(t)
-	if 'u' in info:
-		for i, c in enumerate(u):
-			print(i)
-			print(c, '\n')
-	eu = metric_dimension.distance_similarity_group(et)
-	if 'eu' in info:
-		for i, c in enumerate(eu):
-			print(i)
-			print(c, '\n')
-	w = metric_dimension.find_least(v, u)
+	w = metric_dimension.find_least(v, p)
 	if 'w' in info: print(w, '\n')
 	if len(w) != 0:
 		r = metric_dimension.resolving_representation(v, w, d)
 		if 'r' in info: print(r, '\n')
 		if 'c' in info: print(metric_dimension.valid(r), '\n')
-		n = metric_dimension.find_enumerate(v, u, len(w))
+		n = metric_dimension.find_enumerate(v, p, len(w))
 		if 'n' in info: print(n, '\n')
 		nr = [metric_dimension.resolving_representation(v, w, d) for w in n]
 		if 'nr' in info:
@@ -79,13 +61,13 @@ def main(args):
 				print(r, '\n')
 		nc = [metric_dimension.valid(r) for r in nr]
 		if 'nc' in info: print(nc, '\n')
-	ew = metric_dimension.find_least(v, eu)
+	ew = metric_dimension.find_least(v, ep)
 	if 'ew' in info: print(ew, '\n')
 	if len(ew) != 0:
 		er = metric_dimension.resolving_representation(v, ew, e)
 		if 'er' in info: print(er, '\n')
 		if 'ec' in info: print(metric_dimension.valid(er), '\n')
-		en = metric_dimension.find_enumerate(v, eu, len(ew))
+		en = metric_dimension.find_enumerate(v, ep, len(ew))
 		if 'en' in info: print(en, '\n')
 		enr = [metric_dimension.resolving_representation(v, ew, e) for ew in en]
 		if 'enr' in info:

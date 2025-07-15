@@ -12,36 +12,15 @@ def distance_similarity_broadcast(d):
 
 def distance_similarity_prune(b):
 	p = np.unique(b.reshape(-1, b.shape[2]), axis=0)
-	p = p[~np.all(p, axis=1)]
+	p = p[np.any(p, axis=1) & ~np.all(p, axis=1)]
 	return p
 
-def distance_similarity_permute(p):
-	t = [p]
-	for c in p:
-		idx = np.where(c)[0]
-		n = len(idx)
-		mask = np.arange(2**n)[:, None] & (1 << np.arange(n)) == 0
-		a = np.tile(c, (2**n, 1))
-		a[np.arange(2**n)[:, None], idx] &= mask
-		t.append(a)
-	t = np.unique(np.vstack(t), axis=0)
-	return t
-
-def distance_similarity_group(t):
-	u = [[] for _ in range(t.shape[1] + 1)]
-	for c in t:
-		u[np.sum(c)].append(c)
-	for i in range(len(u)):
-		if len(u[i]) > 0:
-			u[i] = np.vstack(u[i])
-	return u
-
-def apply_boolean_similarity(v, g):
-	return [z3.And(*v[c]) for c in g]
+def apply_boolean_similarity(v, g, n):
+	return z3.And([z3.Not(z3.PbEq([(b, 1) for b in v[c]], n)) for c in g])
 
 def find_exact(v, u, n):
 	s = z3.Solver()
-	s.add(z3.Not(z3.Or(apply_boolean_similarity(v, u[n]))))
+	s.add(apply_boolean_similarity(v, u, n))
 	s.add(z3.AtLeast(*v, n))
 	s.add(z3.AtMost(*v, n))
 	if s.check() == z3.unsat:
@@ -59,7 +38,7 @@ def find_least(v, u):
 
 def find_enumerate(v, u, n):
 	s = z3.Solver()
-	s.add(z3.Not(z3.Or(apply_boolean_similarity(v, u[n]))))
+	s.add(apply_boolean_similarity(v, u, n))
 	s.add(z3.AtLeast(*v, n))
 	s.add(z3.AtMost(*v, n))
 	ws = []
