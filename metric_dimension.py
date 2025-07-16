@@ -33,6 +33,16 @@ def graph6_encode(m : npt.NDArray[np.bool_]) -> str:
 	s = b.decode().strip()
 	return s
 
+def vertices(n : int) -> npt.NDArray[Any]:
+	_vs = [z3.Int('x{}'.format(i + 1)) for i in range(n)] # pyright: ignore
+	vs = np.array(_vs)
+	return vs
+
+def edges(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.intp]:
+	m = np.triu(m, 1)
+	es = np.argwhere(m)
+	return es
+
 def distance_matrix(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.int_]:
 	m = m.T
 	d = cast(npt.NDArray[np.float_], sp.sparse.csgraph.floyd_warshall(m, False))
@@ -40,38 +50,18 @@ def distance_matrix(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.int_]:
 	d_ = d.astype(np.int_)
 	return d_
 
-def __njit__distance_matrix_edge(
+def distance_matrix_edge(
 	n : int,
-	m : npt.NDArray[np.bool_],
 	d : npt.NDArray[np.int_],
 	es : npt.NDArray[np.intp]
 ) -> (
 	npt.NDArray[np.int_]
 ):
-	de = np.empty((m.sum(), n), dtype=np.int_)
+	de = np.empty((len(es), n), dtype=np.int_)
 	for i in range(n):
 		for r, (j, k) in builtins.enumerate(es):
 			de[r, i] = min(d[j, i], d[k, i])
 	return de
-
-def distance_matrix_edge(
-	n : int,
-	m : npt.NDArray[np.bool_],
-	d : npt.NDArray[np.int_]
-) -> Tuple[
-	npt.NDArray[np.intp],
-	npt.NDArray[np.int_]
-]:
-	m = m.copy()
-	m[np.tril_indices(n)] = np.False_
-	es = np.argwhere(m)
-	de = __njit__distance_matrix_edge(n, m, d, es)
-	return de, es
-
-def variable(n : int) -> npt.NDArray[Any]:
-	_vs = [z3.Int('x{}'.format(i + 1)) for i in range(n)] # pyright: ignore
-	vs = np.array(_vs)
-	return vs
 
 def distance_similarity(d : npt.NDArray[np.int_]) -> npt.NDArray[np.bool_]:
 	p : npt.NDArray[np.bool_] = d[None, :, :] == d[:, None, :]
@@ -116,7 +106,8 @@ def is_resolving_valid(r : npt.NDArray[np.int_]) -> bool:
 
 def main_debug(graph : str, info : List[str]) -> None:
 	n, m = graph6_decode(graph)
-	vs = variable(n)
+	vs = vertices(n)
+	es = edges(m)
 
 	d = distance_matrix(m)
 	p = distance_similarity(d)
@@ -125,7 +116,7 @@ def main_debug(graph : str, info : List[str]) -> None:
 	rs = np.stack([resolving_representation(w, d) for w in ws])
 	rs_valid = np.array([is_resolving_valid(r) for r in rs]).reshape(-1, 1)
 
-	de, es = distance_matrix_edge(n, m, d)
+	de = distance_matrix_edge(n, d, es)
 	pe = distance_similarity(de)
 	be = find(vs, pe)
 	wes = enumerate(vs, pe, be)
@@ -193,13 +184,14 @@ def process(
 	str
 ):
 	n, m = graph6_decode(graph)
-	vs = variable(n)
+	vs = vertices(n)
+	es = edges(m)
 
 	d = distance_matrix(m)
 	p = distance_similarity(d)
 	b = find(vs, p)
 
-	de, es = distance_matrix_edge(n, m, d)
+	de = distance_matrix_edge(n, d, es)
 	pe = distance_similarity(de)
 	be = find(vs, pe)
 
@@ -282,17 +274,16 @@ def run_mypy(filename: str) -> bool:
 	print(result.stderr, file=sys.stderr)
 	return False
 
-__njit__distance_matrix_edge = nb.njit( # pyright: ignore
+distance_matrix_edge = nb.njit( # pyright: ignore
 	fastmath=True,
 	cache=True
-)(__njit__distance_matrix_edge)
+)(distance_matrix_edge)
 
 def run_main() -> None:
 	if not run_mypy(__file__):
 		return
-	__njit__distance_matrix_edge.compile(( # type: ignore
+	distance_matrix_edge.compile(( # type: ignore
 		nb.types.intp,
-		nb.types.Array(nb.types.boolean, 2, 'C'),
 		nb.types.Array(nb.types.intp, 2, 'C'),
 		nb.types.Array(nb.types.intp, 2, 'C')
 	))
