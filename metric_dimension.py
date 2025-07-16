@@ -5,9 +5,9 @@ from functools import partial
 import json
 import multiprocessing
 import networkx as nx
+import numba as nb # type: ignore
 import numpy as np
 import numpy.typing as npt
-import numba as nb # type: ignore
 import re
 import scipy as sp # type: ignore
 import subprocess
@@ -64,10 +64,28 @@ def distance_matrix_edge(
 	return de
 
 def distance_similarity(d : npt.NDArray[np.int_]) -> npt.NDArray[np.bool_]:
-	p : npt.NDArray[np.bool_] = d[None, :, :] == d[:, None, :]
-	p = p.reshape(-1, p.shape[2])
-	p = np.unique(p, axis=0)
-	p = p[np.any(p, axis=1) & ~np.all(p, axis=1)]
+	N, n = d.shape
+	p = np.empty(((N - 1) * N // 2, n), dtype=np.bool_)
+	k = 0
+	for i, pivot in builtins.enumerate(d):
+		for row in d[i + 1:]:
+			similarity : npt.NDArray[np.bool_] = pivot == row
+			if 0 < similarity.sum() < n:
+				for j in range(k):
+					if np.all(p[j] == similarity):
+						break
+				else:
+					p[k] = similarity
+					k += 1
+	p = p[:k]
+	p = p[np.argsort(p.sum(axis=1))]
+	mask = np.ones(k, dtype=np.bool_)
+	for i, pivot in builtins.enumerate(p):
+		for row in p[i + 1:]:
+			if np.all((pivot | row) == row):
+				mask[i] = np.False_
+				break
+	p = p[mask]
 	return p
 
 def find(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_]) -> int:
@@ -279,6 +297,11 @@ distance_matrix_edge = nb.njit( # pyright: ignore
 	cache=True
 )(distance_matrix_edge)
 
+distance_similarity = nb.njit( # pyright: ignore
+	fastmath=True,
+	cache=True
+)(distance_similarity)
+
 def run_main() -> None:
 	if not run_mypy(__file__):
 		return
@@ -286,6 +309,9 @@ def run_main() -> None:
 		nb.types.intp,
 		nb.types.Array(nb.types.intp, 2, 'C'),
 		nb.types.Array(nb.types.intp, 2, 'C')
+	))
+	distance_similarity.compile(( # type: ignore
+		nb.types.Array(nb.types.intp, 2, 'C'),
 	))
 	main(sys.argv[1:])
 
