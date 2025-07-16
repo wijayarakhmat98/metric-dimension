@@ -7,6 +7,5 @@
 	"files.insertFinalNewline": true,
 	"files.trimFinalNewlines": true,
 	"files.trimTrailingWhitespace": true,
-	"latex-workshop.latex.outDir": "build",
-	"python.analysis.typeCheckingMode": "strict"
+	"latex-workshop.latex.outDir": "build"
 }

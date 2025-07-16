@@ -1,5 +1,6 @@
 dependencies:
   - matplotlib
+  - mypy
   - networkx
   - numba
   - numpy
@@ -7,5 +8,6 @@ dependencies:
   - pygraphviz
   - scipy
   - svg2tikz
+  - types-networkx
   - pip:
     - z3-solver

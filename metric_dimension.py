@@ -9,6 +9,7 @@ import numpy.typing as npt
 import numba as nb # type: ignore
 import re
 import scipy as sp # type: ignore
+import subprocess
 import sys
 from typing import Any, cast, List, TextIO, Tuple
 import z3 # type: ignore
@@ -18,7 +19,7 @@ def read_file(file : TextIO) -> List[str]:
 
 def graph6_decode(s : str) -> Tuple[int, npt.NDArray[np.bool_]]:
 	b = s.encode()
-	g = nx.from_graph6_bytes(b) # type: ignore
+	g = nx.from_graph6_bytes(b) # pyright: ignore
 	n = g.number_of_nodes()
 	m = cast(npt.NDArray[np.bool_], nx.to_numpy_array(g, dtype=np.bool_)) # type: ignore
 	m = m.T
@@ -27,16 +28,16 @@ def graph6_decode(s : str) -> Tuple[int, npt.NDArray[np.bool_]]:
 def graph6_encode(m : npt.NDArray[np.bool_]) -> str:
 	m = m.T
 	g = cast(nx.Graph, nx.from_numpy_array(m)) # type: ignore
-	b = cast(bytes, nx.to_graph6_bytes(g)) # type: ignore
+	b = cast(bytes, nx.to_graph6_bytes(g)) # pyright: ignore
 	s = b.decode().strip()
 	return s
 
 def distance_matrix(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.int_]:
 	m = m.T
-	d = cast(npt.NDArray[np.float_], sp.sparse.csgraph.floyd_warshall(m, False)) # type: ignore
-	d = d.astype(np.int_)
+	d = cast(npt.NDArray[np.float_], sp.sparse.csgraph.floyd_warshall(m, False))
 	d = d.T
-	return d
+	d_ = d.astype(np.int_)
+	return d_
 
 def __njit__distance_matrix_edge(
 	n : int,
@@ -67,7 +68,7 @@ def distance_matrix_edge(
 	return de, es
 
 def variable(n : int) -> npt.NDArray[Any]:
-	_vs = [z3.Int('x{}'.format(i + 1)) for i in range(n)] # type: ignore
+	_vs = [z3.Int('x{}'.format(i + 1)) for i in range(n)] # pyright: ignore
 	vs = np.array(_vs)
 	return vs
 
@@ -80,26 +81,26 @@ def distance_similarity(d : npt.NDArray[np.int_]) -> npt.NDArray[np.bool_]:
 
 def find(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_]) -> int:
 	z = z3.Optimize()
-	z.add(z3.And([z3.And(v >= 0, v <= 1) for v in vs])) # type: ignore
-	k = z3.Int('k') # type: ignore
-	z.add(z3.Sum(*vs) == k) # type: ignore
-	z.add(k >= 1) # type: ignore
-	z.add(z3.And([z3.Sum(*vs[c]) < k for c in p])) # type: ignore
-	z.minimize(k) # type: ignore
-	z.check() # type: ignore
-	b = cast(int, z.model()[k].as_long()) # type: ignore
+	z.add(z3.And([z3.And(v >= 0, v <= 1) for v in vs])) # pyright: ignore
+	k = z3.Int('k') # pyright: ignore
+	z.add(z3.Sum(*vs) == k) # pyright: ignore
+	z.add(k >= 1) # pyright: ignore
+	z.add(z3.And([z3.Sum(*vs[c]) < k for c in p])) # pyright: ignore
+	z.minimize(k) # pyright: ignore
+	z.check() # pyright: ignore
+	b = cast(int, z.model()[k].as_long()) # pyright: ignore
 	return b
 
 def enumerate(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_], n : int) -> npt.NDArray[np.bool_]:
 	z = z3.Solver()
-	z.add(z3.And([z3.And(v >= 0, v <= 1) for v in vs])) # type: ignore
-	z.add(z3.Sum(*vs) == n) # type: ignore
-	z.add(z3.And([z3.Sum(*vs[c]) < n for c in p])) # type: ignore
+	z.add(z3.And([z3.And(v >= 0, v <= 1) for v in vs])) # pyright: ignore
+	z.add(z3.Sum(*vs) == n) # pyright: ignore
+	z.add(z3.And([z3.Sum(*vs[c]) < n for c in p])) # pyright: ignore
 	ws : List[List[int]] = []
-	while z.check() == z3.sat: # type: ignore
+	while z.check() == z3.sat: # pyright: ignore
 		model = z.model()
-		w = [cast(int, model[v].as_long()) for v in vs] # type: ignore
-		z.add(z3.Or([v != v_ for v, v_ in zip(vs, w)])) # type: ignore
+		w = [cast(int, model[v].as_long()) for v in vs] # pyright: ignore
+		z.add(z3.Or([v != v_ for v, v_ in zip(vs, w)])) # pyright: ignore
 		ws.append(w)
 	ws_ = np.array(ws, dtype=np.bool_)
 	return ws_
@@ -228,12 +229,22 @@ def main(args : List[str]) -> None:
 		case 'process': main_process()
 		case _        : print_usage()
 
-__njit__distance_matrix_edge = nb.njit( # type: ignore
+def run_mypy(filename: str) -> bool:
+	result = subprocess.run(['mypy', filename], capture_output=True, text=True)
+	if result.returncode == 0:
+		return True
+	print(result.stdout)
+	print(result.stderr, file=sys.stderr)
+	return False
+
+__njit__distance_matrix_edge = nb.njit( # pyright: ignore
 	fastmath=True,
 	cache=True
 )(__njit__distance_matrix_edge)
 
 def run_main() -> None:
+	if not run_mypy(__file__):
+		return
 	__njit__distance_matrix_edge.compile(( # type: ignore
 		nb.types.intp,
 		nb.types.Array(nb.types.boolean, 2, 'C'),
