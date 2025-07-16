@@ -12,17 +12,21 @@ def graph6_decode(s : str) -> Tuple[int, npt.NDArray[np.bool_]]:
 	g = nx.from_graph6_bytes(b) # type: ignore
 	n = g.number_of_nodes()
 	m = cast(npt.NDArray[np.bool_], nx.to_numpy_array(g, dtype=np.bool_)) # type: ignore
+	m = m.T
 	return n, m
 
 def graph6_encode(m : npt.NDArray[np.bool_]) -> str:
+	m = m.T
 	g = cast(nx.Graph, nx.from_numpy_array(m)) # type: ignore
 	b = cast(bytes, nx.to_graph6_bytes(g)) # type: ignore
 	s = b.decode().strip()
 	return s
 
 def distance_matrix(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.int_]:
+	m = m.T
 	d = cast(npt.NDArray[np.float_], sp.sparse.csgraph.floyd_warshall(m, False)) # type: ignore
 	d = d.astype(np.int_)
+	d = d.T
 	return d
 
 def __njit__distance_matrix_edge(
