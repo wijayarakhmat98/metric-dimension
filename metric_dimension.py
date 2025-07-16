@@ -11,7 +11,7 @@ import re
 import scipy as sp # type: ignore
 import subprocess
 import sys
-from typing import Any, cast, List, TextIO, Tuple
+from typing import Any, cast, Dict, List, Set, TextIO, Tuple
 import z3 # type: ignore
 
 def process(graph : str) -> str:
@@ -32,6 +32,11 @@ def process(graph : str) -> str:
 		'metric_dimension': b,
 		'edge_dimension': be
 	})
+
+def resume(s : str) -> str:
+	data : Dict[str, Any] = json.loads(s)
+	graph : str = data['graph']
+	return graph
 
 def read_file(file : TextIO) -> List[str]:
 	return [line.strip() for line in file]
@@ -187,23 +192,31 @@ def main_debug(graph : str, info : List[str]) -> None:
 			case _          : pass
 	print('\n\n'.join(log))
 
-def main_process() -> None:
-	graphs = read_file(sys.stdin)
+def main_process(graphs_exclude : Set[str] = set()) -> None:
+	graphs = set(read_file(sys.stdin)) - graphs_exclude
 	with multiprocessing.Pool() as pool:
 		for result in pool.imap_unordered(process, graphs):
 			print(result)
+
+def main_resume(filename_output : str) -> None:
+	with open(filename_output, 'r') as file:
+		result = read_file(file)
+	with multiprocessing.Pool() as pool:
+		graphs_exclude = set(pool.imap_unordered(resume, result))
+	main_process(graphs_exclude)
 
 def main_usage() -> None:
 	print(
 		re.sub(r'\n\t\t\t', r'\n',
 		'''
 			usage:
-				<debug|process> ...
+				<debug|process|resume> ...
 
 				debug <graph6 string> [info...]
 				process
+				resume <output file>
 
-				The subcommand process read graphs from stdin.
+				Both process and resume read graphs from stdin.
 
 			info:
 				graph    : graph6 string
@@ -231,12 +244,13 @@ def main_usage() -> None:
 	)
 
 def main(args : List[str]) -> None:
-	if len(args) < 1 or args[0] in ('debug') and len(args) < 2:
+	if len(args) < 1 or args[0] in ('debug', 'resume') and len(args) < 2:
 		main_usage()
 		return
 	match args[0]:
 		case 'debug'  : main_debug(args[1], args[2:])
 		case 'process': main_process()
+		case 'resume' : main_resume(args[1])
 		case _        : main_usage()
 
 def run_mypy(filename: str) -> bool:
