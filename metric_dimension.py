@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.12
 
 import builtins
+from functools import partial
 import json
 import multiprocessing
 import networkx as nx
@@ -11,7 +12,7 @@ import re
 import scipy as sp # type: ignore
 import subprocess
 import sys
-from typing import Any, cast, List, TextIO, Tuple
+from typing import Any, cast, Dict, List, TextIO, Tuple
 import z3 # type: ignore
 
 def read_file(file : TextIO) -> List[str]:
@@ -159,7 +160,38 @@ def main_debug(graph : str, info : List[str]) -> None:
 			case _          : pass
 	print('\n\n'.join(log))
 
-def process(graph : str) -> str:
+def process_info(info : List[str]) -> partial[str]:
+	add_n = add_m = add_vs = add_es = add_d = add_p = add_b = add_ws = add_rs = add_rs_valid = add_de = add_pe = add_be = add_wes = add_res = add_res_valid = False
+	for i in info:
+		match i:
+			case 'n'        : add_n = True
+			case 'm'        : add_m = True
+			case 'vs'       : add_vs = True
+			case 'es'       : add_es = True
+			case 'd'        : add_d = True
+			case 'p'        : add_p = True
+			case 'b'        : add_b = True
+			case 'ws'       : add_ws = True
+			case 'rs'       : add_rs = True
+			case 'rs_valid' : add_rs_valid = True
+			case 'de'       : add_de = True
+			case 'pe'       : add_pe = True
+			case 'be'       : add_be = True
+			case 'wes'      : add_wes = True
+			case 'res'      : add_res = True
+			case 'res_valid': add_res_valid = True
+			case _          : pass
+	bound_process = partial(process,
+		add_n = add_n, add_m = add_m, add_vs = add_vs, add_es = add_es, add_d = add_d, add_p = add_p, add_b = add_b, add_ws = add_ws, add_rs = add_rs, add_rs_valid = add_rs_valid, add_de = add_de, add_pe = add_pe, add_be = add_be, add_wes = add_wes, add_res = add_res, add_res_valid = add_res_valid
+	)
+	return bound_process
+
+def process(
+		graph : str,
+		add_n : bool, add_m : bool, add_vs : bool, add_es : bool, add_d : bool, add_p : bool, add_b : bool, add_ws : bool, add_rs : bool, add_rs_valid : bool, add_de : bool, add_pe : bool, add_be : bool, add_wes : bool, add_res : bool, add_res_valid : bool
+) -> (
+	str
+):
 	n, m = graph6_decode(graph)
 	vs = variable(n)
 
@@ -167,20 +199,33 @@ def process(graph : str) -> str:
 	p = distance_similarity(d)
 	b = find(vs, p)
 
-	de, _ = distance_matrix_edge(n, m, d)
+	de, es = distance_matrix_edge(n, m, d)
 	pe = distance_similarity(de)
 	be = find(vs, pe)
 
-	return json.dumps({
-		'graph': graph,
-		'metric_dimension': b,
-		'edge_dimension': be
-	})
+	result : Dict[str, Any] = {'graph': graph}
 
-def main_process() -> None:
+	if add_n: result['n'] = n
+	if add_m: result['m'] = m
+
+	if add_vs: result['vs'] = vs
+	if add_es: result['es'] = es
+
+	if add_d: result['d'] = d
+	if add_p: result['p'] = p
+	if add_b: result['b'] = b
+
+	if add_de: result['de'] = de
+	if add_pe: result['pe'] = pe
+	if add_be: result['be'] = be
+
+	return json.dumps(result)
+
+def main_process(info : List[str]) -> None:
 	graphs = read_file(sys.stdin)
+	bound_process = process_info(info)
 	with multiprocessing.Pool() as pool:
-		for result in pool.imap_unordered(process, graphs):
+		for result in pool.imap_unordered(bound_process, graphs):
 			print(result)
 
 def print_usage() -> None:
@@ -226,7 +271,7 @@ def main(args : List[str]) -> None:
 		return
 	match args[0]:
 		case 'debug'  : main_debug(args[1], args[2:])
-		case 'process': main_process()
+		case 'process': main_process(args[1:])
 		case _        : print_usage()
 
 def run_mypy(filename: str) -> bool:
