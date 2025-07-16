@@ -1,74 +1,79 @@
 #!/usr/bin/env python3.12
 
 import graph_utils
+import numpy as np
 import metric_dimension
 import sys
+from typing import List
 
-def main(args):
+def main(args : List[str]) -> None:
 	if len(args) == 0:
 		print('usage:')
 		print('\t<graph6 string> [info...]')
 		print()
 		print('info:')
-		print('\tm\tadjacency matrix')
-		print('\tg\tgraph6 (sanity check)')
-		print('\td\tdistance matrix')
-		print('\te\tedge distance matrix')
-		print('\tv\tnodes')
-		print('\tb\tdistance similarity (broadcast)')
-		print('\teb\tedge distance similarity (broadcast)')
-		print('\tp\tdistance similarity (prune)')
-		print('\tep\tedge distance similarity (prune)')
-		print('\tw\tresolving set')
-		print('\tew\tedge resolving set')
-		print('\tr\tresolving representation')
-		print('\ter\tedge resolving representation')
-		print('\tc\tvalid solution? (sanity check)')
-		print('\tec\tedge valid solution? (sanity check)')
+		print('\tgraph    : graph6 string')
+		print()
+		print('\tn        : number of vertices')
+		print('\tm        : adjacency matrix')
+		print('\tvs       : vertices\' names')
+		print()
+		print('\td        : distance matrix')
+		print('\tp        : distance similarity')
+		print('\tb        : metric dimension')
+		print('\tws       : resolving sets')
+		print('\trs       : resolving sets\' representations')
+		print('\trs_valid : valid resolving sets?')
+		print()
+		print('\tde       : edge distance matrix')
+		print('\tpe       : edge distance similarity')
+		print('\tbe       : edge metric dimension')
+		print('\twes      : edge resolving sets')
+		print('\tres      : edge resolving sets\' representations')
+		print('\tres_valid: valid edge resolving sets?')
 		return
-	s = args[0]
+
+	graph = args[0]
 	info = args[1:]
-	m = graph_utils.graph6_decode(s)
-	if 'm' in info: print(m, '\n')
-	g = graph_utils.graph6_encode(m)
-	if 'g' in info: print(g, '\n')
+
+	n, m = graph_utils.graph6_decode(graph)
+	vs = metric_dimension.variable(n)
+
 	d = graph_utils.distance_matrix(m)
-	if 'd' in info: print(d, '\n')
-	e, l = graph_utils.edge_distance_matrix(m, d)
-	if 'e' in info: print(e, '\n')
-	if 'l' in info: print(l, '\n')
-	v = metric_dimension.create_node_boolean(m)
-	if 'v' in info: print(v, '\n')
-	b = metric_dimension.distance_similarity_broadcast(d)
-	if 'b' in info: print(b, '\n')
-	eb = metric_dimension.distance_similarity_broadcast(e)
-	if 'eb' in info: print(eb, '\n')
-	p = metric_dimension.distance_similarity_prune(b)
-	if 'p' in info: print(p, '\n')
-	ep = metric_dimension.distance_similarity_prune(eb)
-	if 'ep' in info: print(ep, '\n')
-	w = metric_dimension.find_least(v, p)
-	if 'w' in info: print(w, '\n')
-	if w != 0:
-		n = metric_dimension.find_enumerate(v, p, w)
-		if 'n' in info: print(n, '\n')
-		nr = [metric_dimension.resolving_representation(v, w, d) for w in n]
-		if 'nr' in info:
-			for r in nr:
-				print(r, '\n')
-		nc = [metric_dimension.valid(r) for r in nr]
-		if 'nc' in info: print(nc, '\n')
-	ew = metric_dimension.find_least(v, ep)
-	if 'ew' in info: print(ew, '\n')
-	if ew != 0:
-		en = metric_dimension.find_enumerate(v, ep, ew)
-		if 'en' in info: print(en, '\n')
-		enr = [metric_dimension.resolving_representation(v, ew, e) for ew in en]
-		if 'enr' in info:
-			for er in enr:
-				print(er, '\n')
-		enc = [metric_dimension.valid(er) for er in enr]
-		if 'enc' in info: print(enc, '\n')
+	p = metric_dimension.distance_similarity(d)
+	b = metric_dimension.find(vs, p)
+	ws = metric_dimension.enumerate(vs, p, b)
+	rs = np.stack([metric_dimension.resolving_representation(w, d) for w in ws])
+	rs_valid = np.array([metric_dimension.is_resolving_valid(r) for r in rs]).reshape(-1, 1)
+
+	de, _ = graph_utils.distance_matrix_edge(n, m, d)
+	pe = metric_dimension.distance_similarity(de)
+	be = metric_dimension.find(vs, pe)
+	wes = metric_dimension.enumerate(vs, pe, be)
+	res = np.stack([metric_dimension.resolving_representation(we, de) for we in wes])
+	res_valid = np.array([metric_dimension.is_resolving_valid(re) for re in res]).reshape(-1, 1)
+
+	log : List[str] = []
+	for i in info:
+		match i:
+			case 'graph'    : log.append(graph_utils.graph6_encode(m))
+			case 'n'        : log.append(str(n))
+			case 'm'        : log.append(str(m))
+			case 'vs'       : log.append(str(vs))
+			case 'd'        : log.append(str(d))
+			case 'p'        : log.append(str(p))
+			case 'b'        : log.append(str(b))
+			case 'ws'       : log.append(str(np.stack([vs[w] for w in ws])))
+			case 'rs'       : log.append(str(rs))
+			case 'rs_valid' : log.append(str(rs_valid))
+			case 'de'       : log.append(str(de))
+			case 'pe'       : log.append(str(pe))
+			case 'be'       : log.append(str(be))
+			case 'wes'      : log.append(str(np.stack([vs[we] for we in wes])))
+			case 'res'      : log.append(str(res))
+			case 'res_valid': log.append(str(res_valid))
+			case _          : pass
+	print('\n\n'.join(log))
 
 if __name__ == '__main__':
 	main(sys.argv[1:])

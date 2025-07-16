@@ -5,30 +5,28 @@ import json
 import metric_dimension
 import multiprocessing
 import sys
+from typing import List
 import utils
 
-def find_metric_dimension(s):
-	m = graph_utils.graph6_decode(s)
-	v = metric_dimension.create_node_boolean(m)
+def process(graph : str) -> str:
+	n, m = graph_utils.graph6_decode(graph)
+	vs = metric_dimension.variable(n)
 
 	d = graph_utils.distance_matrix(m)
-	b = metric_dimension.distance_similarity_broadcast(d)
-	p = metric_dimension.distance_similarity_prune(b)
+	p = metric_dimension.distance_similarity(d)
+	b = metric_dimension.find(vs, p)
 
-	e, _ = graph_utils.edge_distance_matrix(m, d)
-	eb = metric_dimension.distance_similarity_broadcast(e)
-	ep = metric_dimension.distance_similarity_prune(eb)
-
-	w = metric_dimension.find_least(v, p)
-	ew = metric_dimension.find_least(v, ep)
+	de, _ = graph_utils.distance_matrix_edge(n, m, d)
+	pe = metric_dimension.distance_similarity(de)
+	be = metric_dimension.find(vs, pe)
 
 	return json.dumps({
-		'graph': s,
-		'metric_dimension': w,
-		'edge_dimension': ew
+		'graph': graph,
+		'metric_dimension': b,
+		'edge_dimension': be
 	})
 
-def main(args):
+def main(args : List[str]) -> None:
 	if len(args) != 1:
 		print('usage:')
 		print('\t<graph6 filename>')
@@ -36,10 +34,10 @@ def main(args):
 
 	graph6_filename = args[0]
 
-	ss = utils.file_to_list(graph6_filename)
+	graphs = utils.file_to_list(graph6_filename)
 
 	with multiprocessing.Pool() as pool:
-		for result in pool.imap_unordered(find_metric_dimension, ss):
+		for result in pool.imap_unordered(process, graphs):
 			print(result)
 
 if __name__ == '__main__':

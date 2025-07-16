@@ -1,6 +1,7 @@
 dependencies:
   - matplotlib
   - networkx
+  - numba
   - numpy
   - python
   - pygraphviz
