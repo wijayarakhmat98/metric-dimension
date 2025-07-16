@@ -24,8 +24,7 @@ def find_least(v, u):
 	s.add(z3.And([z3.Sum(*v[c]) < k for c in u]))
 	s.minimize(k)
 	s.check()
-	model = s.model()
-	return [b for b in v if model.evaluate(b).as_long() == 1]
+	return s.model()[k].as_long()
 
 def find_enumerate(v, u, n):
 	s = z3.Solver()
@@ -35,13 +34,13 @@ def find_enumerate(v, u, n):
 	ws = []
 	while s.check() == z3.sat:
 		model = s.model()
-		w = [b for b in v if model.evaluate(b).as_long() == 1]
-		s.add(z3.Not(z3.And([b == 1 for b in w])))
+		w = [model[b].as_long() for b in v]
+		s.add(z3.Or([b != x for b, x in zip(v, w)]))
 		ws.append(w)
-	return ws
+	return np.array(ws, dtype=np.bool_)
 
 def resolving_representation(v, w, d):
-	return d[:, np.array([b in w for b in v])]
+	return d[:, w]
 
 def valid(r):
 	unique, idx = np.unique(r, axis=0, return_index=True)

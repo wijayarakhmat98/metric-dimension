@@ -24,8 +24,8 @@ def find_metric_dimension(s):
 
 	return json.dumps({
 		'graph': s,
-		'metric_dimension': len(w),
-		'edge_dimension': len(ew)
+		'metric_dimension': w,
+		'edge_dimension': ew
 	})
 
 def main(args):

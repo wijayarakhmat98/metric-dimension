@@ -49,11 +49,8 @@ def main(args):
 	if 'ep' in info: print(ep, '\n')
 	w = metric_dimension.find_least(v, p)
 	if 'w' in info: print(w, '\n')
-	if len(w) != 0:
-		r = metric_dimension.resolving_representation(v, w, d)
-		if 'r' in info: print(r, '\n')
-		if 'c' in info: print(metric_dimension.valid(r), '\n')
-		n = metric_dimension.find_enumerate(v, p, len(w))
+	if w != 0:
+		n = metric_dimension.find_enumerate(v, p, w)
 		if 'n' in info: print(n, '\n')
 		nr = [metric_dimension.resolving_representation(v, w, d) for w in n]
 		if 'nr' in info:
@@ -63,17 +60,14 @@ def main(args):
 		if 'nc' in info: print(nc, '\n')
 	ew = metric_dimension.find_least(v, ep)
 	if 'ew' in info: print(ew, '\n')
-	if len(ew) != 0:
-		er = metric_dimension.resolving_representation(v, ew, e)
-		if 'er' in info: print(er, '\n')
-		if 'ec' in info: print(metric_dimension.valid(er), '\n')
-		en = metric_dimension.find_enumerate(v, ep, len(ew))
+	if ew != 0:
+		en = metric_dimension.find_enumerate(v, ep, ew)
 		if 'en' in info: print(en, '\n')
 		enr = [metric_dimension.resolving_representation(v, ew, e) for ew in en]
 		if 'enr' in info:
 			for er in enr:
 				print(er, '\n')
-		enc = [metric_dimension.valid(r) for er in enr]
+		enc = [metric_dimension.valid(er) for er in enr]
 		if 'enc' in info: print(enc, '\n')
 
 if __name__ == '__main__':
