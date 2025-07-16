@@ -1,6 +1,5 @@
 #!/usr/bin/env python3.12
 
-import graph_utils
 import numpy as np
 import metric_dimension
 import sys
@@ -17,6 +16,7 @@ def main(args : List[str]) -> None:
 		print('\tn        : number of vertices')
 		print('\tm        : adjacency matrix')
 		print('\tvs       : vertices\' names')
+		print('\tes       : edges')
 		print()
 		print('\td        : distance matrix')
 		print('\tp        : distance similarity')
@@ -36,40 +36,46 @@ def main(args : List[str]) -> None:
 	graph = args[0]
 	info = args[1:]
 
-	n, m = graph_utils.graph6_decode(graph)
+	n, m = metric_dimension.graph6_decode(graph)
 	vs = metric_dimension.variable(n)
 
-	d = graph_utils.distance_matrix(m)
+	d = metric_dimension.distance_matrix(m)
 	p = metric_dimension.distance_similarity(d)
 	b = metric_dimension.find(vs, p)
 	ws = metric_dimension.enumerate(vs, p, b)
 	rs = np.stack([metric_dimension.resolving_representation(w, d) for w in ws])
 	rs_valid = np.array([metric_dimension.is_resolving_valid(r) for r in rs]).reshape(-1, 1)
 
-	de, _ = graph_utils.distance_matrix_edge(n, m, d)
+	de, es = metric_dimension.distance_matrix_edge(n, m, d)
 	pe = metric_dimension.distance_similarity(de)
 	be = metric_dimension.find(vs, pe)
 	wes = metric_dimension.enumerate(vs, pe, be)
 	res = np.stack([metric_dimension.resolving_representation(we, de) for we in wes])
 	res_valid = np.array([metric_dimension.is_resolving_valid(re) for re in res]).reshape(-1, 1)
 
+	graph = metric_dimension.graph6_encode(m)
+	es = np.array([[vs[e[0]], vs[e[1]]] for e in es])
+	ws = np.stack([vs[w] for w in ws])
+	wes = np.stack([vs[we] for we in wes])
+
 	log : List[str] = []
 	for i in info:
 		match i:
-			case 'graph'    : log.append(graph_utils.graph6_encode(m))
+			case 'graph'    : log.append(graph)
 			case 'n'        : log.append(str(n))
 			case 'm'        : log.append(str(m))
 			case 'vs'       : log.append(str(vs))
+			case 'es'       : log.append(str(es))
 			case 'd'        : log.append(str(d))
 			case 'p'        : log.append(str(p))
 			case 'b'        : log.append(str(b))
-			case 'ws'       : log.append(str(np.stack([vs[w] for w in ws])))
+			case 'ws'       : log.append(str(ws))
 			case 'rs'       : log.append(str(rs))
 			case 'rs_valid' : log.append(str(rs_valid))
 			case 'de'       : log.append(str(de))
 			case 'pe'       : log.append(str(pe))
 			case 'be'       : log.append(str(be))
-			case 'wes'      : log.append(str(np.stack([vs[we] for we in wes])))
+			case 'wes'      : log.append(str(wes))
 			case 'res'      : log.append(str(res))
 			case 'res_valid': log.append(str(res_valid))
 			case _          : pass

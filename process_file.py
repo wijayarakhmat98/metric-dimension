@@ -1,6 +1,5 @@
 #!/usr/bin/env python3.12
 
-import graph_utils
 import json
 import metric_dimension
 import multiprocessing
@@ -9,14 +8,14 @@ from typing import List
 import utils
 
 def process(graph : str) -> str:
-	n, m = graph_utils.graph6_decode(graph)
+	n, m = metric_dimension.graph6_decode(graph)
 	vs = metric_dimension.variable(n)
 
-	d = graph_utils.distance_matrix(m)
+	d = metric_dimension.distance_matrix(m)
 	p = metric_dimension.distance_similarity(d)
 	b = metric_dimension.find(vs, p)
 
-	de, _ = graph_utils.distance_matrix_edge(n, m, d)
+	de, _ = metric_dimension.distance_matrix_edge(n, m, d)
 	pe = metric_dimension.distance_similarity(de)
 	be = metric_dimension.find(vs, pe)
 
