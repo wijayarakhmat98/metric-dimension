@@ -5,14 +5,11 @@ def decode(result : str) -> Dict[str, Any]:
 	datum : Dict[str, Any] = json.loads(result)
 	return datum
 
-def format_time(time : float) -> str:
-	return '{}ms'.format(round(1000 * time, 3))
-
 def format(data : List[Dict[str, Any]]) -> None:
 	data.sort(key=lambda datum: datum['graph'])
 	for datum in data:
-		for key, value in datum.items():
-			if "time" in key:
-				datum[key] = format_time(value)
+		time_keys = [key for key in datum if 'time' in key]
+		for key in time_keys:
+			del datum[key]
 	for datum in data:
-		print(json.dumps(datum, indent=2))
+		print(json.dumps(datum))

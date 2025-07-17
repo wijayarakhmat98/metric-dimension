@@ -79,7 +79,7 @@ class ProtocolFormat(Protocol):
 	def format(self, data : List[Dict[str, Any]]) -> None: ...
 
 def main_format(args : List[str]) -> None:
-	option = parse_args(args[1:], [
+	option = parse_args(args, [
 		('--module', 'module_path', 'default_format.py')
 	])
 	format = cast(ProtocolFormat, load_module(option['module_path']))
