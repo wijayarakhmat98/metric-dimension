@@ -21,7 +21,7 @@ def process(graph : str) -> str:
 		'edge_dimension': be
 	})
 
-def resume(s : str) -> str:
-	data : Dict[str, Any] = json.loads(s)
-	graph : str = data['graph']
+def resume(result : str) -> str:
+	datum : Dict[str, Any] = json.loads(result)
+	graph : str = datum['graph']
 	return graph

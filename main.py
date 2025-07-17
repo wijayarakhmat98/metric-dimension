@@ -9,7 +9,7 @@ import re
 import subprocess
 import sys
 from types import ModuleType
-from typing import cast, Dict, List, Protocol, TextIO, Tuple
+from typing import Any, cast, Dict, List, Protocol, TextIO, Tuple
 
 def main(args : List[str]) -> None:
 	mypy(__file__)
@@ -20,6 +20,7 @@ def main(args : List[str]) -> None:
 	match args[0]:
 		case 'debug'  : main_debug(args[1:])
 		case 'process': main_process(args[1:])
+		case 'format' : main_format(args[1:])
 		case _        : main_usage()
 
 def main_usage() -> None:
@@ -31,6 +32,9 @@ def main_usage() -> None:
 
 				process [--resume=<result file>] [--module=<process module>]
 					Read graphs from stdin.
+
+				format [--module=<format module>]
+					Read results from stdin.
 		'''
 		).strip()
 	)
@@ -62,13 +66,27 @@ def main_process(args : List[str]) -> None:
 	graphs = read_file(sys.stdin)
 	if option['filename']:
 		with open(option['filename'], 'r') as file:
-			result_exclude = read_file(file)
+			results = read_file(file)
 		with multiprocessing.Pool() as pool:
-			graphs_exclude = set(pool.imap_unordered(process.resume, result_exclude))
+			graphs_exclude = set(pool.imap_unordered(process.resume, results))
 		graphs = list(set(graphs) - graphs_exclude)
 	with multiprocessing.Pool() as pool:
 		for result in pool.imap_unordered(process.process, graphs):
 			print(result)
+
+class ProtocolFormat(Protocol):
+	def decode(self, s : str) -> Dict[str, Any]: ...
+	def format(self, data : List[Dict[str, Any]]) -> None: ...
+
+def main_format(args : List[str]) -> None:
+	option = parse_args(args[1:], [
+		('--module', 'module_path', 'default_format.py')
+	])
+	format = cast(ProtocolFormat, load_module(option['module_path']))
+	results = read_file(sys.stdin)
+	with multiprocessing.Pool() as pool:
+		data = list(pool.imap_unordered(format.decode, results))
+	format.format(data)
 
 def hash(s : str) -> str:
 	sha256_hash = hashlib.sha256(s.encode()).digest()
