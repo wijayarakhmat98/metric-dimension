@@ -17,7 +17,7 @@ def graph6_decode(s : str) -> Tuple[int, npt.NDArray[np.bool_]]:
 
 def graph6_encode(m : npt.NDArray[np.bool_]) -> str:
 	m = m.T
-	g = cast(nx.Graph, nx.from_numpy_array(m)) # type: ignore
+	g = nx.from_numpy_array(m) # pyright: ignore
 	b = cast(bytes, nx.to_graph6_bytes(g)) # pyright: ignore
 	s = b.decode().strip()
 	return s
@@ -34,7 +34,7 @@ def edges(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.intp]:
 
 def distance_matrix(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.int_]:
 	m = m.T
-	d = cast(npt.NDArray[np.float_], sp.sparse.csgraph.floyd_warshall(m, False))
+	d = cast(npt.NDArray[np.float64], sp.sparse.csgraph.floyd_warshall(m, False))
 	d = d.T
 	d_ = d.astype(np.int_)
 	return d_
@@ -54,7 +54,7 @@ def distance_matrix_edge(
 
 def distance_similarity(d : npt.NDArray[np.int_]) -> npt.NDArray[np.bool_]:
 	N, n = d.shape
-	p = np.empty(((N - 1) * N // 2, n), dtype=np.bool_)
+	p : npt.NDArray[np.bool_] = np.empty(((N - 1) * N // 2, n), dtype=np.bool_)
 	k = 0
 	for i, pivot in builtins.enumerate(d):
 		for row in d[i + 1:]:
