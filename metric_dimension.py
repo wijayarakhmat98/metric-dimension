@@ -4,7 +4,7 @@ import numba as nb # type: ignore
 import numpy as np
 import numpy.typing as npt
 import scipy as sp # type: ignore
-from typing import Any, cast, List, Tuple
+from typing import Any, cast, Tuple
 import z3 # type: ignore
 
 def graph6_decode(s : str) -> Tuple[int, npt.NDArray[np.bool_]]:
@@ -89,19 +89,35 @@ def find(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_]) -> int:
 	b = cast(int, z.model()[k].as_long()) # pyright: ignore
 	return b
 
-def enumerate(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_], k : int) -> npt.NDArray[np.bool_]:
-	z = z3.Solver()
-	z.add(z3.And([z3.And(v >= 0, v <= 1) for v in vs])) # pyright: ignore
-	z.add(z3.Sum(*vs) == k) # pyright: ignore
-	z.add(z3.And([z3.Sum(*vs[c]) < k for c in p])) # pyright: ignore
-	ws : List[List[int]] = []
-	while z.check() == z3.sat: # pyright: ignore
-		model = z.model()
-		w = [cast(int, model[v].as_long()) for v in vs] # pyright: ignore
-		z.add(z3.Or([v != v_ for v, v_ in zip(vs, w)])) # pyright: ignore
-		ws.append(w)
-	ws_ = np.array(ws, dtype=np.bool_)
-	return ws_
+def enumerate(n : int, p : npt.NDArray[np.bool_], r : int) -> npt.NDArray[np.bool_]:
+	c = 1
+	for i in range(r):
+		c *= n - i
+		c //= i + 1
+	ws : npt.NDArray[np.bool_] = np.empty((c, n), dtype=np.bool_)
+	k = 0
+	idx = np.array(list(range(r)), dtype=np.int_)
+	idx_last = (n - idx - 1)[::-1]
+	choice = np.zeros(n, dtype=np.bool_)
+	choice[idx] = np.True_
+	while True:
+		for row in p:
+			if np.all((choice | row) == row):
+				break
+		else:
+			ws[k] = choice
+			k += 1
+		for i in range(r - 1, -1, -1):
+			if idx[i] != idx_last[i]:
+				break
+		else:
+			ws = ws[:k]
+			return ws
+		choice[idx[i:]] = np.False_
+		idx[i] += 1
+		for j in range(i + 1, r):
+			idx[j] = idx[j - 1] + 1
+		choice[idx[i:]] = np.True_
 
 def resolving_representation(w : npt.NDArray[np.bool_], d : npt.NDArray[np.int_]) -> npt.NDArray[np.int_]:
 	return d[:, w]
@@ -119,10 +135,17 @@ distance_similarity = nb.njit( # pyright: ignore
 	fastmath=True, cache=True
 )(distance_similarity)
 
+enumerate = nb.njit( # pyright: ignore
+	fastmath=True, cache=True
+)(enumerate)
+
 def __njit_compile__() -> None:
 	distance_matrix_edge.compile( # type: ignore
 		(nb.types.intp, nb.types.Array(nb.types.intp, 2, 'C'), nb.types.Array(nb.types.intp, 2, 'C'))
 	)
 	distance_similarity.compile( # type: ignore
 		(nb.types.Array(nb.types.intp, 2, 'C'),)
+	)
+	enumerate.compile( # type: ignore
+		(nb.types.intp, nb.types.Array(nb.types.bool, 2, 'C'), nb.types.intp)
 	)

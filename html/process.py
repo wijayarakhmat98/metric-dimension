@@ -18,7 +18,7 @@ def process(graph : str) -> str:
 	b_time = perf_counter() - b_time
 
 	ws_time = perf_counter()
-	_ws = metric_dimension.enumerate(vs, p, b)
+	_ws = metric_dimension.enumerate(n, p, b)
 	ws_time = perf_counter() - ws_time
 
 	ws = [[str(v) for v in vs[w]] for w in _ws]
@@ -34,7 +34,7 @@ def process(graph : str) -> str:
 	be_time = perf_counter() - be_time
 
 	wes_time = perf_counter()
-	_wes = metric_dimension.enumerate(vs, pe, be)
+	_wes = metric_dimension.enumerate(n, pe, be)
 	wes_time = perf_counter() - wes_time
 
 	wes = [[str(v) for v in vs[we]] for we in _wes]

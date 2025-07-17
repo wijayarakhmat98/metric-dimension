@@ -27,12 +27,12 @@ def process(graph : str) -> str:
 		d = metric_dimension.distance_matrix(m)
 		p = metric_dimension.distance_similarity(d)
 		with timer() as b_time: b = metric_dimension.find(vs, p)
-		with timer() as ws_time: ws = metric_dimension.enumerate(vs, p, b)
+		with timer() as ws_time: ws = metric_dimension.enumerate(n, p, b)
 
 		de = metric_dimension.distance_matrix_edge(n, d, es)
 		pe = metric_dimension.distance_similarity(de)
 		with timer() as be_time: be = metric_dimension.find(vs, pe)
-		with timer() as wes_time: wes = metric_dimension.enumerate(vs, pe, be)
+		with timer() as wes_time: wes = metric_dimension.enumerate(n, pe, be)
 
 	return json.dumps({
 		'graph': graph,
