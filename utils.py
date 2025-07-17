@@ -3,7 +3,7 @@ import copy
 import hashlib
 import json
 import networkx as nx
-from networkx.drawing.nx_agraph import to_agraph # type: ignore
+from networkx.drawing.nx_agraph import to_agraph # pyright: ignore
 import re
 from typing import Any, cast, Dict, List
 
@@ -19,13 +19,13 @@ def hash(s : str) -> str:
 
 def graph6_draw(s : str, filename : str) -> None:
 	b = s.encode()
-	g = nx.from_graph6_bytes(b) # type: ignore
-	mapping : Dict[int, str] = {i: 'x{}'.format(i + 1) for i in g.nodes} # type: ignore
+	g = nx.from_graph6_bytes(b) # pyright: ignore
+	mapping : Dict[int, str] = {i: 'x{}'.format(i + 1) for i in g.nodes} # pyright: ignore
 	g = cast(nx.Graph, nx.relabel_nodes(g, mapping)) # type: ignore
-	a = to_agraph(g) # type: ignore
-	a.graph_attr.update(splines='true') # type: ignore
-	a.layout('fdp') # type: ignore
-	a.draw(filename) # type: ignore
+	a = to_agraph(g) # pyright: ignore
+	a.graph_attr.update(splines='true') # pyright: ignore
+	a.layout('fdp') # pyright: ignore
+	a.draw(filename) # pyright: ignore
 
 def info_stringify(info : Dict[str, Any]) -> str:
 	info = copy.deepcopy(info)

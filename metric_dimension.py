@@ -89,11 +89,11 @@ def find(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_]) -> int:
 	b = cast(int, z.model()[k].as_long()) # pyright: ignore
 	return b
 
-def enumerate(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_], n : int) -> npt.NDArray[np.bool_]:
+def enumerate(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_], k : int) -> npt.NDArray[np.bool_]:
 	z = z3.Solver()
 	z.add(z3.And([z3.And(v >= 0, v <= 1) for v in vs])) # pyright: ignore
-	z.add(z3.Sum(*vs) == n) # pyright: ignore
-	z.add(z3.And([z3.Sum(*vs[c]) < n for c in p])) # pyright: ignore
+	z.add(z3.Sum(*vs) == k) # pyright: ignore
+	z.add(z3.And([z3.Sum(*vs[c]) < k for c in p])) # pyright: ignore
 	ws : List[List[int]] = []
 	while z.check() == z3.sat: # pyright: ignore
 		model = z.model()
