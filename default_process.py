@@ -44,9 +44,9 @@ def process(graph : str) -> str:
 		'edges': len(es),
 		'edge_dimension': be,
 		'edge_dimension_time': be_time,
-		'total_time': total_time,
 		'edge_dimension_solutions': len(wes),
 		'edge_dimension_solutions_time': wes_time,
+		'total_time': total_time
 	}, default=float)
 
 def resume(result : str) -> str:
