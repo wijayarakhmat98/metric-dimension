@@ -30,10 +30,13 @@ def main_usage() -> None:
 				process [--resume=<result file>] [-m=<process module>]
 					Read graphs from stdin.
 
-				format [-m=<format module>]
+				format [-s=<true|false>] [-m=<format module>]
 					Read results from stdin.
 
 			options:
+				-s=<true|false>, --sort=<true|false>
+					Defaults to false.
+
 				-m=<module name>, --module=<module name>
 
 				-h, --help
@@ -79,7 +82,7 @@ def main_process(args : List[str]) -> None:
 
 class ProtocolFormat(Protocol):
 	def decode(self, s : str) -> Dict[str, Any]: ...
-	def format(self, results : List[str], option : Dict[str, str]) -> None: ...
+	def format(self, results : List[str], sort : bool, option : Dict[str, str]) -> None: ...
 
 def main_format(args : List[str]) -> None:
 	option = parse_args(args, [
@@ -88,7 +91,7 @@ def main_format(args : List[str]) -> None:
 	])
 	format = cast(ProtocolFormat, load_module(option['module_name']))
 	results = read_file(sys.stdin)
-	format.format(results, option)
+	format.format(results, option['sort'] == 'true', option)
 
 def hash(s : str) -> str:
 	sha256_hash = hashlib.sha256(s.encode()).digest()

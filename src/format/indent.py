@@ -12,9 +12,10 @@ def decode(result : str) -> Dict[str, Any]:
 			datum[key] = format_time(value)
 	return datum
 
-def format(results : List[str], *_ : object) -> None:
+def format(results : List[str], sort : bool, *_ : object) -> None:
 	with multiprocessing.Pool() as pool:
 		data = list(pool.imap_unordered(decode, results))
-	data.sort(key=lambda datum: datum['graph'])
+	if sort:
+		data.sort(key=lambda datum: datum['graph'])
 	for datum in data:
 		print(json.dumps(datum, indent=2))
