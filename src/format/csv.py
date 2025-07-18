@@ -13,7 +13,7 @@ def decode(result : str) -> Dict[str, Any]:
 		datum[key] = str(value)
 	return datum
 
-def format(results : List[str], sort : bool, *_ : object) -> None:
+def format(results : List[str], sort : bool, *args : object, **kwargs : object) -> None:
 	if not results:
 		return
 	with multiprocessing.Pool() as pool:

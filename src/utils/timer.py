@@ -1,5 +1,5 @@
 from time import perf_counter
-from typing import Any, TypeVar
+from typing import TypeVar
 
 T = TypeVar('T')
 
@@ -9,7 +9,7 @@ class timer():
 		self.elapsed = 0.0
 		return self
 
-	def __exit__(self, *_ : Any) -> None:
+	def __exit__(self, *args : object, **kwargs : object) -> None:
 		self.end = perf_counter()
 		self.elapsed = self.end - self.start
 

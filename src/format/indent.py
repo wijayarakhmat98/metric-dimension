@@ -12,7 +12,7 @@ def decode(result : str) -> Dict[str, Any]:
 			datum[key] = format_time(value)
 	return datum
 
-def format(results : List[str], sort : bool, *_ : object) -> None:
+def format(results : List[str], sort : bool, *args : object, **kwargs : object) -> None:
 	with multiprocessing.Pool() as pool:
 		data = list(pool.imap_unordered(decode, results))
 	if sort:
