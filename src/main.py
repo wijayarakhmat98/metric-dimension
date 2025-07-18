@@ -9,7 +9,8 @@ import metric_dimension
 import re
 import sys
 from types import ModuleType
-from typing import Any, cast, Dict, List, Protocol, TextIO, Tuple
+from typing import Any, cast, Dict, List, Protocol, TextIO
+from utils import parse_args
 
 def main(args : List[str]) -> None:
 	metric_dimension.__njit_compile__()
@@ -48,7 +49,7 @@ def main_usage() -> None:
 	sys.exit()
 
 class ProtocolDebug(Protocol):
-	def debug(self, graph : str, option : Dict[str, str]) -> None: ...
+	def debug(self, graph : str, option_raw : List[str]) -> None: ...
 
 def main_debug(args : List[str]) -> None:
 	if len(args) < 1:
@@ -58,11 +59,11 @@ def main_debug(args : List[str]) -> None:
 		(['-m', '--module'], 'module_name', 'debug.b_be')
 	])
 	debug = cast(ProtocolDebug, load_module(option['module_name']))
-	debug.debug(graph, option)
+	debug.debug(graph, args)
 
 class ProtocolProcess(Protocol):
-	def process(self, graph : str, option : Dict[str, str]) -> str: ...
-	def resume(self, result : str, option : Dict[str, str]) -> str: ...
+	def process(self, graph : str, option_raw : List[str]) -> str: ...
+	def resume(self, result : str, option_raw : List[str]) -> str: ...
 
 def main_process(args : List[str]) -> None:
 	option = parse_args(args, [
@@ -75,15 +76,15 @@ def main_process(args : List[str]) -> None:
 		with open(option['filename'], 'r') as file:
 			results = read_file(file)
 		with multiprocessing.Pool() as pool:
-			graphs_exclude = set(pool.imap_unordered(partial(process.resume, option=option), results))
+			graphs_exclude = set(pool.imap_unordered(partial(process.resume, option_raw=args), results))
 		graphs = list(set(graphs) - graphs_exclude)
 	with multiprocessing.Pool() as pool:
-		for result in pool.imap_unordered(partial(process.process, option=option), graphs):
+		for result in pool.imap_unordered(partial(process.process, option_raw=args), graphs):
 			print(result)
 
 class ProtocolFormat(Protocol):
 	def decode(self, s : str) -> Dict[str, Any]: ...
-	def format(self, results : List[str], sort : bool, option : Dict[str, str]) -> None: ...
+	def format(self, results : List[str], sort : bool, option_raw : List[str]) -> None: ...
 
 def main_format(args : List[str]) -> None:
 	option = parse_args(args, [
@@ -92,7 +93,7 @@ def main_format(args : List[str]) -> None:
 	])
 	format = cast(ProtocolFormat, load_module(option['module_name']))
 	results = read_file(sys.stdin)
-	format.format(results, not option['not-sort'], option)
+	format.format(results, not option['not-sort'], args)
 
 def hash(s : str) -> str:
 	sha256_hash = hashlib.sha256(s.encode()).digest()
@@ -105,19 +106,6 @@ def read_file(file : TextIO) -> List[str]:
 def load_module(module_name : str) -> ModuleType:
 	module = importlib.import_module(module_name)
 	return module
-
-def parse_args(args : List[str], config : List[Tuple[List[str], str, str]]) -> Dict[str, str]:
-	map : Dict[str, str] = {}
-	option : Dict[str, str] = {}
-	for flags, key, value in config:
-		for flag in flags:
-			map[flag] = key
-		option[key] = value
-	for arg in args:
-		key, value = [s.strip() for s in (arg.split('=', 1) + [''])[:2]]
-		if key in map:
-			option[map[key]] = value
-	return option
 
 if __name__ == '__main__':
 	main(sys.argv[1:])
