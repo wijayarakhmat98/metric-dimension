@@ -76,7 +76,7 @@ def main_process(args : List[str]) -> None:
 
 class ProtocolFormat(Protocol):
 	def decode(self, s : str) -> Dict[str, Any]: ...
-	def format(self, data : List[Dict[str, Any]]) -> None: ...
+	def format(self, results : List[str], option : Dict[str, str]) -> None: ...
 
 def main_format(args : List[str]) -> None:
 	option = parse_args(args, [
@@ -84,9 +84,7 @@ def main_format(args : List[str]) -> None:
 	])
 	format = cast(ProtocolFormat, load_module(option['module_path']))
 	results = read_file(sys.stdin)
-	with multiprocessing.Pool() as pool:
-		data = list(pool.imap_unordered(format.decode, results))
-	format.format(data)
+	format.format(results, option)
 
 def hash(s : str) -> str:
 	sha256_hash = hashlib.sha256(s.encode()).digest()
