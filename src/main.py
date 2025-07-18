@@ -57,7 +57,7 @@ class ProtocolProcess(Protocol):
 def main_process(args : List[str]) -> None:
 	option = parse_args(args, [
 		('--resume', 'filename', ''),
-		('--module', 'module_name', 'process.b_ws_be_wes')
+		('--module', 'module_name', 'process.b_wn_be_wen')
 	])
 	process = cast(ProtocolProcess, load_module(option['module_name']))
 	graphs = read_file(sys.stdin)
