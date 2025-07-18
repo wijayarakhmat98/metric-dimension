@@ -2,14 +2,8 @@ import json
 import multiprocessing
 from typing import Any, Dict, List
 
-def format_time(time : float) -> str:
-	return '{}ms'.format(round(1000 * time, 3))
-
 def decode(result : str) -> Dict[str, Any]:
 	datum : Dict[str, Any] = json.loads(result)
-	for key, value in datum.items():
-		if "time" in key:
-			datum[key] = format_time(value)
 	return datum
 
 def format(results : List[str], sort : bool, *args : object, **kwargs : object) -> None:
