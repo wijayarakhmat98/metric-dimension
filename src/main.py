@@ -2,6 +2,7 @@
 
 import base64
 import hashlib
+from functools import partial
 import importlib
 import multiprocessing
 import metric_dimension
@@ -47,7 +48,7 @@ def main_usage() -> None:
 	sys.exit()
 
 class ProtocolDebug(Protocol):
-	def debug(self, graph : str) -> None: ...
+	def debug(self, graph : str, option : Dict[str, str]) -> None: ...
 
 def main_debug(args : List[str]) -> None:
 	if len(args) < 1:
@@ -57,11 +58,11 @@ def main_debug(args : List[str]) -> None:
 		(['-m', '--module'], 'module_name', 'debug.b_be')
 	])
 	debug = cast(ProtocolDebug, load_module(option['module_name']))
-	debug.debug(graph)
+	debug.debug(graph, option)
 
 class ProtocolProcess(Protocol):
-	def process(self, graph : str) -> str: ...
-	def resume(self, s : str) -> str: ...
+	def process(self, graph : str, option : Dict[str, str]) -> str: ...
+	def resume(self, result : str, option : Dict[str, str]) -> str: ...
 
 def main_process(args : List[str]) -> None:
 	option = parse_args(args, [
@@ -74,10 +75,10 @@ def main_process(args : List[str]) -> None:
 		with open(option['filename'], 'r') as file:
 			results = read_file(file)
 		with multiprocessing.Pool() as pool:
-			graphs_exclude = set(pool.imap_unordered(process.resume, results))
+			graphs_exclude = set(pool.imap_unordered(partial(process.resume, option=option), results))
 		graphs = list(set(graphs) - graphs_exclude)
 	with multiprocessing.Pool() as pool:
-		for result in pool.imap_unordered(process.process, graphs):
+		for result in pool.imap_unordered(partial(process.process, option=option), graphs):
 			print(result)
 
 class ProtocolFormat(Protocol):

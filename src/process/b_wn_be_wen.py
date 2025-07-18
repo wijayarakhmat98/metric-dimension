@@ -3,7 +3,7 @@ import metric_dimension
 from typing import Any, Dict
 from utils import timer
 
-def process(graph : str) -> str:
+def process(graph : str, *args : object, **kwargs : object) -> str:
 	with timer() as total_time:
 		n, m = metric_dimension.graph6_decode(graph)
 		vs = metric_dimension.vertices(n)
@@ -36,7 +36,7 @@ def process(graph : str) -> str:
 		'total_time': total_time
 	}, default=float)
 
-def resume(result : str) -> str:
+def resume(result : str, *args : object, **kwargs : object) -> str:
 	datum : Dict[str, Any] = json.loads(result)
 	graph : str = datum['graph']
 	return graph

@@ -6,7 +6,7 @@ class timer_ms(timer):
 	def __str__(self) -> str:
 		return '{}ms'.format(round(1000 * float(self), 3))
 
-def debug(graph : str) -> None:
+def debug(graph : str, *_ : object) -> None:
 	with timer_ms() as total_time:
 		n, m = metric_dimension.graph6_decode(graph)
 		vs = metric_dimension.vertices(n)
