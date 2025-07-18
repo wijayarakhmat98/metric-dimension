@@ -119,6 +119,30 @@ def enumerate(n : int, p : npt.NDArray[np.bool_], r : int) -> npt.NDArray[np.boo
 			idx[j] = idx[j - 1] + 1
 		choice[idx[i:]] = np.True_
 
+def find_bruteforce(n : int, p : npt.NDArray[np.bool_]) -> int:
+	for r in range(1, n + 1):
+		idx = np.array(list(range(r)), dtype=np.int_)
+		idx_last = (n - idx - 1)[::-1]
+		choice = np.zeros(n, dtype=np.bool_)
+		choice[idx] = np.True_
+		while True:
+			for row in p:
+				if np.all((choice | row) == row):
+					break
+			else:
+				return r
+			for i in range(r - 1, -1, -1):
+				if idx[i] != idx_last[i]:
+					break
+			else:
+				break
+			choice[idx[i:]] = np.False_
+			idx[i] += 1
+			for j in range(i + 1, r):
+				idx[j] = idx[j - 1] + 1
+			choice[idx[i:]] = np.True_
+	return 0
+
 def resolving_representation(w : npt.NDArray[np.bool_], d : npt.NDArray[np.int_]) -> npt.NDArray[np.int_]:
 	return d[:, w]
 
@@ -139,6 +163,10 @@ enumerate = nb.njit( # pyright: ignore
 	fastmath=True, cache=True
 )(enumerate)
 
+find_bruteforce = nb.njit( # pyright: ignore
+	fastmath=True, cache=True
+)(find_bruteforce)
+
 def __njit_compile__() -> None:
 	distance_matrix_edge.compile( # type: ignore
 		(nb.types.intp, nb.types.Array(nb.types.intp, 2, 'C'), nb.types.Array(nb.types.intp, 2, 'C'))
@@ -148,4 +176,7 @@ def __njit_compile__() -> None:
 	)
 	enumerate.compile( # type: ignore
 		(nb.types.intp, nb.types.Array(nb.types.bool, 2, 'C'), nb.types.intp)
+	)
+	find_bruteforce.compile( # type: ignore
+		(nb.types.intp, nb.types.Array(nb.types.bool, 2, 'C'))
 	)
