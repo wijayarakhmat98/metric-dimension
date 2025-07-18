@@ -23,13 +23,14 @@ ENV LANGUAGE="en_US:en"
 ENV LC_ALL="en_US.UTF-8"
 
 RUN \
-	apt-get -y install \
-		texlive-full
-
-RUN \
+	sed -i 's/main/main contrib non-free-firmware/' /etc/apt/sources.list.d/debian.sources && \
+	apt-get update && \
 	apt-get -y install \
 		bzip2 \
-		curl
+		curl \
+		nauty \
+		texlive-full \
+		ttf-mscorefonts-installer
 
 USER "${username}"
 
@@ -45,11 +46,6 @@ RUN \
 	printf "\nmicromamba activate 'z3'\n" >> "${HOME}/.bashrc"
 
 USER root
-
-RUN \
-	sed -i 's/main/main contrib non-free-firmware/' /etc/apt/sources.list.d/debian.sources && \
-	apt-get update && \
-	apt-get -y install ttf-mscorefonts-installer
 
 RUN \
 	apt-get -y install \

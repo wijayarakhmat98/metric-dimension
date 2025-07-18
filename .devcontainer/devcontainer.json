@@ -9,6 +9,7 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
+				"ms-azuretools.vscode-containers",
 				"ms-python.python",
 				"James-Yu.latex-workshop"
 			]
