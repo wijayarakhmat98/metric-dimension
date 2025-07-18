@@ -31,12 +31,12 @@ def main_usage() -> None:
 				process [--resume=<result file>] [-m=<process module>]
 					Read graphs from stdin.
 
-				format [-s=<true|false>] [-m=<format module>]
+				format [-s] [-m=<format module>]
 					Read results from stdin.
 
 			options:
-				-s=<true|false>, --sort=<true|false>
-					Defaults to false.
+				-s, --sort
+					Enable sorting. Some module may ignore this.
 
 				-m=<module name>, --module=<module name>
 
@@ -87,12 +87,12 @@ class ProtocolFormat(Protocol):
 
 def main_format(args : List[str]) -> None:
 	option = parse_args(args, [
-		(['-s', '--sort'], 'sort', 'false'),
+		(['-s', '--sort'], 'not-sort', 'true'),
 		(['-m', '--module'], 'module_name', 'format.indent')
 	])
 	format = cast(ProtocolFormat, load_module(option['module_name']))
 	results = read_file(sys.stdin)
-	format.format(results, option['sort'] == 'true', option)
+	format.format(results, not option['not-sort'], option)
 
 def hash(s : str) -> str:
 	sha256_hash = hashlib.sha256(s.encode()).digest()
@@ -115,7 +115,7 @@ def parse_args(args : List[str], config : List[Tuple[List[str], str, str]]) -> D
 		option[key] = value
 	for arg in args:
 		key, value = [s.strip() for s in (arg.split('=', 1) + [''])[:2]]
-		if key in map and value:
+		if key in map:
 			option[map[key]] = value
 	return option
 
