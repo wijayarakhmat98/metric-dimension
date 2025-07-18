@@ -25,13 +25,19 @@ def main_usage() -> None:
 		re.sub(r'\n\t\t\t', r'\n',
 		'''
 			usage:
-				debug <graph6 string> [--module=<debug module>]
+				debug <graph6 string> [-m=<debug module>]
 
-				process [--resume=<result file>] [--module=<process module>]
+				process [--resume=<result file>] [-m=<process module>]
 					Read graphs from stdin.
 
-				format [--module=<format module>]
+				format [-m=<format module>]
 					Read results from stdin.
+
+			options:
+				-m=<module name>, --module=<module name>
+
+				-h, --help
+					A module may have a help page.
 		'''
 		).strip()
 	)
@@ -45,7 +51,7 @@ def main_debug(args : List[str]) -> None:
 		main_usage()
 	graph = args[0]
 	option = parse_args(args[1:], [
-		('--module', 'module_name', 'debug.b_be')
+		(['-m', '--module'], 'module_name', 'debug.b_be')
 	])
 	debug = cast(ProtocolDebug, load_module(option['module_name']))
 	debug.debug(graph)
@@ -56,8 +62,8 @@ class ProtocolProcess(Protocol):
 
 def main_process(args : List[str]) -> None:
 	option = parse_args(args, [
-		('--resume', 'filename', ''),
-		('--module', 'module_name', 'process.b_wn_be_wen')
+		(['--resume'], 'filename', ''),
+		(['-m', '--module'], 'module_name', 'process.b_wn_be_wen')
 	])
 	process = cast(ProtocolProcess, load_module(option['module_name']))
 	graphs = read_file(sys.stdin)
@@ -77,7 +83,8 @@ class ProtocolFormat(Protocol):
 
 def main_format(args : List[str]) -> None:
 	option = parse_args(args, [
-		('--module', 'module_name', 'format.indent')
+		(['-s', '--sort'], 'sort', 'false'),
+		(['-m', '--module'], 'module_name', 'format.indent')
 	])
 	format = cast(ProtocolFormat, load_module(option['module_name']))
 	results = read_file(sys.stdin)
@@ -95,11 +102,12 @@ def load_module(module_name : str) -> ModuleType:
 	module = importlib.import_module(module_name)
 	return module
 
-def parse_args(args : List[str], config : List[Tuple[str, str, str]]) -> Dict[str, str]:
+def parse_args(args : List[str], config : List[Tuple[List[str], str, str]]) -> Dict[str, str]:
 	map : Dict[str, str] = {}
 	option : Dict[str, str] = {}
-	for flag, key, value in config:
-		map[flag] = key
+	for flags, key, value in config:
+		for flag in flags:
+			map[flag] = key
 		option[key] = value
 	for arg in args:
 		key, value = [s.strip() for s in (arg.split('=', 1) + [''])[:2]]
