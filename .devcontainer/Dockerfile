@@ -23,14 +23,10 @@ ENV LANGUAGE="en_US:en"
 ENV LC_ALL="en_US.UTF-8"
 
 RUN \
-	sed -i 's/main/main contrib non-free-firmware/' /etc/apt/sources.list.d/debian.sources && \
-	apt-get update && \
 	apt-get -y install \
 		bzip2 \
 		curl \
-		nauty \
-		texlive-full \
-		ttf-mscorefonts-installer
+		nauty
 
 USER "${username}"
 
@@ -55,8 +51,7 @@ RUN \
 		man \
 		openssh-client \
 		patch \
-		vim \
-		xz-utils
+		vim
 
 RUN \
 	mkdir /workspaces && \

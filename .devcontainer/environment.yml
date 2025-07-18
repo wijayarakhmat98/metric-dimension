@@ -1,11 +1,9 @@
 dependencies:
-  - matplotlib
   - mypy
   - networkx
   - numba
   - numpy
   - python
-  - pygraphviz
   - scipy
   - types-networkx
   - pip:

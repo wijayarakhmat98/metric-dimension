@@ -6,6 +6,5 @@
 	"files.eol": "\n",
 	"files.insertFinalNewline": true,
 	"files.trimFinalNewlines": true,
-	"files.trimTrailingWhitespace": true,
-	"latex-workshop.latex.outDir": "build"
+	"files.trimTrailingWhitespace": true
 }
