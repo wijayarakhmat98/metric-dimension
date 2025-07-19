@@ -21,10 +21,9 @@ def debug(graph : str, *args : object, **kwargs : object) -> None:
 
 	print('Metric dimension...')
 	with timer_ms() as b_time:
-		cs, ck = metric_dimension.find_constraint(vs, p)
 		for k in range(n - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
-			with timer_ms() as k_time: found = metric_dimension.find_exact(cs, ck, k)
+			with timer_ms() as k_time: found = metric_dimension.find_exact(vs, p, k)
 			print(k_time)
 			if not found:
 				b = k + 1

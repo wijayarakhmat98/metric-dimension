@@ -23,7 +23,7 @@ def graph6_encode(m : npt.NDArray[np.bool_]) -> str:
 	return s
 
 def vertices(n : int) -> npt.NDArray[Any]:
-	_vs = [z3.Int('x{}'.format(i + 1)) for i in range(n)] # pyright: ignore
+	_vs = [z3.Bool('x{}'.format(i + 1)) for i in range(n)] # pyright: ignore
 	vs = np.array(_vs)
 	return vs
 
@@ -77,28 +77,20 @@ def distance_similarity(d : npt.NDArray[np.int_]) -> npt.NDArray[np.bool_]:
 	p = p[mask]
 	return p
 
-def find_constraint(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_]) -> Tuple[List[z3.BoolRef], z3.ArithRef]:
-	ck = z3.Int('k') # pyright: ignore
+def find_exact(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_], k : int) -> bool:
 	cs : List[z3.BoolRef] = []
-	for v in vs:
-		cs.append(v >= 0)
-		cs.append(v <= 1)
-	cs.append(z3.Sum(*vs) == ck) # pyright: ignore
+	cs.append(z3.PbEq([(v, 1) for v in vs], k)) # pyright: ignore
+	p = p[p.sum(axis=1) >= k]
 	for vf in p:
-		cs.append(z3.Sum(*vs[vf]) < ck) # pyright: ignore
-	return cs, ck
-
-def find_exact(cs : List[z3.BoolRef], ck : z3.ArithRef, k : int) -> bool:
+		cs.append(z3.PbLe([(v, 1) for v in vs[vf]], k - 1)) # pyright: ignore
 	z = z3.Solver()
 	z.add(cs) # pyright: ignore
-	z.add(ck == k) # pyright: ignore
 	found = cast(bool, z.check() == z3.sat) # pyright: ignore
 	return found
 
 def find(n : int, vs : npt.NDArray[Any], p : npt.NDArray[np.bool_]) -> int:
-	cs, ck = find_constraint(vs, p)
 	for k in range(n - 1, -1, -1):
-		if not find_exact(cs, ck, k):
+		if not find_exact(vs, p, k):
 			return k + 1
 	return 0
 
