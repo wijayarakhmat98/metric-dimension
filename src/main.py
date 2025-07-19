@@ -56,7 +56,7 @@ def main_debug(args : List[str]) -> None:
 		main_usage()
 	graph = args[0]
 	option = parse_args(args[1:], [
-		(['-m', '--module'], 'module_name', 'debug.b_be')
+		(['-m', '--module'], 'module_name', 'debug.b')
 	])
 	debug = cast(ProtocolDebug, load_module(option['module_name']))
 	debug.debug(graph, args)
