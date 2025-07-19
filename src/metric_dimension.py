@@ -97,9 +97,9 @@ def find_exact(cs : List[z3.BoolRef], ck : z3.ArithRef, k : int) -> bool:
 
 def find(n : int, vs : npt.NDArray[Any], p : npt.NDArray[np.bool_]) -> int:
 	cs, ck = find_constraint(vs, p)
-	for k in range(1, n):
-		if find_exact(cs, ck, k):
-			return k
+	for k in range(n - 1, -1, -1):
+		if not find_exact(cs, ck, k):
+			return k + 1
 	return 0
 
 def find_exact_bruteforce(n : int, p : npt.NDArray[np.bool_], k : int) -> bool:
@@ -126,9 +126,9 @@ def find_exact_bruteforce(n : int, p : npt.NDArray[np.bool_], k : int) -> bool:
 		choice[idx[i:]] = np.True_
 
 def find_bruteforce(n : int, p : npt.NDArray[np.bool_]) -> int:
-	for k in range(1, n):
-		if find_exact_bruteforce(n, p, k):
-			return k
+	for k in range(n - 1, -1, -1):
+		if not find_exact_bruteforce(n, p, k):
+			return k + 1
 	return 0
 
 def enumerate(n : int, p : npt.NDArray[np.bool_], r : int) -> npt.NDArray[np.bool_]:

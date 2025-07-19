@@ -22,10 +22,10 @@ def debug(graph : str, *args : object, **kwargs : object) -> None:
 	print('Metric dimension...')
 	with timer_ms() as b_time:
 		cs, ck = metric_dimension.find_constraint(vs, p)
-		for k in range(1, n):
+		for k in range(n - 1, -1, -1):
 			print('Trying k = {}...'.format(k))
-			if metric_dimension.find_exact(cs, ck, k):
-				b = k
+			if not metric_dimension.find_exact(cs, ck, k):
+				b = k + 1
 				break
 		else:
 			b = 0
