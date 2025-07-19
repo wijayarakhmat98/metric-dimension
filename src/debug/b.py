@@ -13,7 +13,7 @@ def debug(graph : str, *args : object, **kwargs : object) -> None:
 
 		d = metric_dimension.distance_matrix(m)
 		p = metric_dimension.distance_similarity(d)
-		with timer_ms() as b_time: b = metric_dimension.find(vs, p)
+		with timer_ms() as b_time: b = metric_dimension.find(n, vs, p)
 
 	print(json.dumps({
 		'graph': graph,

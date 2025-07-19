@@ -14,11 +14,11 @@ def debug(graph : str, *args : object, **kwargs : object) -> None:
 
 		d = metric_dimension.distance_matrix(m)
 		p = metric_dimension.distance_similarity(d)
-		with timer_ms() as b_time: b = metric_dimension.find(vs, p)
+		with timer_ms() as b_time: b = metric_dimension.find(n, vs, p)
 
 		de = metric_dimension.distance_matrix_edge(n, d, es)
 		pe = metric_dimension.distance_similarity(de)
-		with timer_ms() as be_time: be = metric_dimension.find(vs, pe)
+		with timer_ms() as be_time: be = metric_dimension.find(n, vs, pe)
 
 	print(json.dumps({
 		'graph': graph,
