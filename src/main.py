@@ -17,9 +17,9 @@ def main(args : List[str]) -> None:
 	if len(args) < 1:
 		main_usage()
 	match args[0]:
-		case 'debug'  : main_debug(args[1:])
-		case 'process': main_process(args[1:])
-		case 'format' : main_format(args[1:])
+		case 'd' | 'debug'  : main_debug(args[1:])
+		case 'p' | 'process': main_process(args[1:])
+		case 'f' | 'format' : main_format(args[1:])
 		case _        : main_usage()
 
 def main_usage() -> None:
@@ -27,12 +27,12 @@ def main_usage() -> None:
 		re.sub(r'\n\t\t\t', r'\n',
 		'''
 			usage:
-				debug <graph6 string> [-m=<debug module>]
+				d|debug <graph6 string> [-m=<debug module>]
 
-				process [--resume=<result file>] [-m=<process module>]
+				p|process [--resume=<result file>] [-m=<process module>]
 					Read graphs from stdin.
 
-				format [-s] [-m=<format module>]
+				f|format [-s] [-m=<format module>]
 					Read results from stdin.
 
 			options:
