@@ -26,7 +26,8 @@ RUN \
 	apt-get -y install \
 		bzip2 \
 		curl \
-		nauty
+		nauty \
+		procps
 
 USER "${username}"
 
