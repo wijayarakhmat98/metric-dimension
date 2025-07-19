@@ -7,10 +7,11 @@ from typing import Any, Callable, Dict, List, Union
 from utils import parse_args
 
 def format_number(x : float, o : int, p : int, u : str) -> Union[int, float, str]:
+	y : Union[int, float]
 	if p == 0:
-		y : Union[int, float] = int(10**o * x)
+		y = int(10**o * x)
 	else:
-		y : Union[int, float] = round(10**o * x, p)
+		y = round(10**o * x, p)
 	if u:
 		return '{}{}'.format(y, u)
 	else:
