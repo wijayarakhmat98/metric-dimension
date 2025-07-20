@@ -74,8 +74,8 @@ def configs(data : List[Dict[str, Any]]) -> Dict[int, Dict[str, Any]]:
 		node_size = (2 * node_r) ** 2
 		pos = {
 			v: (
-				r * math.cos(math.pi / 2 - i * 2 * math.pi / n),
-				r * math.sin(math.pi / 2 - i * 2 * math.pi / n)
+				r * math.cos(math.pi / 2 - (i + 1) * 2 * math.pi / n),
+				r * math.sin(math.pi / 2 - (i + 1) * 2 * math.pi / n)
 			)
 			for i, v in enumerate(vs)
 		}
