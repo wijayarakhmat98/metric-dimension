@@ -65,6 +65,7 @@ def usage() -> None:
 				-u=<unit>, --unit=<unit>
 					Add unit after number.
 		'''
-		).strip()
+		).strip(),
+		file=sys.stderr
 	)
 	sys.exit()

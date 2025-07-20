@@ -40,6 +40,7 @@ def usage() -> None:
 				-r=<pattern>, --regex=<pattern>
 				 Remove keys that matches with this pattern.
 		'''
-		).strip()
+		).strip(),
+		file=sys.stderr
 	)
 	sys.exit()

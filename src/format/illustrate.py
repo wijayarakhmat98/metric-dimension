@@ -53,7 +53,8 @@ def usage() -> None:
 				-f=<path>, --folder=<path>
 				 Write output to this location.
 		'''
-		).strip()
+		).strip(),
+		file=sys.stderr
 	)
 	sys.exit()
 

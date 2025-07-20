@@ -44,7 +44,8 @@ def main_usage() -> None:
 				-h, --help
 					A module may have a help page.
 		'''
-		).strip()
+		).strip(),
+		file=sys.stderr
 	)
 	sys.exit()
 
