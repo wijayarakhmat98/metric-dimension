@@ -57,9 +57,9 @@ def main_debug(args : List[str]) -> None:
 		main_usage()
 	graph = args[0]
 	option = parse_args(args[1:], [
-		(['-m', '--module'], 'module_name', 'debug.b')
+		(['-m', '--module'], 'module_name', 'b')
 	])
-	debug = cast(ProtocolDebug, load_module(option['module_name']))
+	debug = cast(ProtocolDebug, load_module('debug.{}'.format(option['module_name'])))
 	debug.debug(graph, args)
 
 class ProtocolProcess(Protocol):
@@ -69,9 +69,9 @@ class ProtocolProcess(Protocol):
 def main_process(args : List[str]) -> None:
 	option = parse_args(args, [
 		(['--resume'], 'filename', ''),
-		(['-m', '--module'], 'module_name', 'process.b_wn_be_wen')
+		(['-m', '--module'], 'module_name', 'b_wn_be_wen')
 	])
-	process = cast(ProtocolProcess, load_module(option['module_name']))
+	process = cast(ProtocolProcess, load_module('process.{}'.format(option['module_name'])))
 	graphs = read_file(sys.stdin)
 	if option['filename']:
 		with open(option['filename'], 'r') as file:
@@ -90,9 +90,9 @@ class ProtocolFormat(Protocol):
 def main_format(args : List[str]) -> None:
 	option = parse_args(args, [
 		(['-s', '--sort'], 'not-sort', 'true'),
-		(['-m', '--module'], 'module_name', 'format.identity')
+		(['-m', '--module'], 'module_name', 'identity')
 	])
-	format = cast(ProtocolFormat, load_module(option['module_name']))
+	format = cast(ProtocolFormat, load_module('format.{}'.format(option['module_name'])))
 	results = read_file(sys.stdin)
 	format.format(results, not option['not-sort'], args)
 
