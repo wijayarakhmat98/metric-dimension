@@ -53,7 +53,7 @@ def usage() -> None:
 
 			options:
 				-r=<pattern>, --regex=<pattern>
-				 Match on keys with this pattern.
+					Match on keys with this pattern.
 
 				-o=<magnitude>, --magnitude=<magnitude>
 					Multiplies by 10^o.
