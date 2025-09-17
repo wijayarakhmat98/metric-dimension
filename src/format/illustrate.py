@@ -6,10 +6,12 @@ import matplotlib.pyplot as plt
 import metric_dimension
 import multiprocessing
 import networkx as nx
+import numpy as np
+import numpy.typing as npt
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Dict, Iterator, List, Set
+from typing import Any, cast, Dict, Iterator, List
 from utils import hash, parse_args
 
 def decode(result : str) -> Dict[str, Any]:
@@ -23,12 +25,18 @@ def decode_vertices(result : str) -> int:
 		return n
 	return cast(int, datum['vertices'])
 
-def decode_then_draw(result : str, path : Path, configs : Dict[int, Dict[str, Any]]) -> Dict[str, Any]:
+config_cache : Dict[int, Dict[str, Any]] = {}
+
+def decode_then_draw(result : str, path : Path) -> Dict[str, Any]:
 	datum = decode(result)
 	if 'hash' not in datum:
 		h = hash(datum['graph'])
 		datum['hash'] = h
-	draw(datum, path, configs)
+	path_img = path / '{}.svg'.format(datum['hash'])
+	n, m = metric_dimension.graph6_decode(datum['graph'])
+	if n not in config_cache:
+		config_cache[n] = config(n)
+	draw(m, path_img, config_cache[n])
 	return datum
 
 def format(results : Iterator[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
@@ -38,11 +46,9 @@ def format(results : Iterator[str], option_raw : List[str], *args : object, **kw
 	])
 	if not option['not-help'] or not option['path']:
 		usage()
-	with multiprocessing.Pool() as pool:
-		ns = set(pool.imap_unordered(decode_vertices, results))
 	path = Path(option['path'])
 	path.mkdir(parents=True, exist_ok=True)
-	bound_decode_then_draw = partial(decode_then_draw, path=path, configs=configs(ns))
+	bound_decode_then_draw = partial(decode_then_draw, path=path)
 	matplotlib.use('Agg')
 	with multiprocessing.Pool() as pool:
 		for datum in pool.imap_unordered(bound_decode_then_draw, results):
@@ -64,42 +70,37 @@ def usage() -> None:
 	)
 	sys.exit()
 
-def configs(ns : Set[int]) -> Dict[int, Dict[str, Any]]:
-	configs : Dict[int, Dict[str, Any]] = {}
-	for n in ns:
-		font_size = 12
-		node_r = (len(str(n)) + 1) * font_size / 2
-		r = max(2 * n * node_r / math.pi, 3 * node_r)
-		x_d = 2 * r + 4 * node_r
-		y_d = 2 * r + 4 * node_r
-		vs = ['x{}'.format(i + 1) for i in range(n)]
-		fig_size = (x_d / 72, y_d / 72)
-		ax_xbound = (x_d / -2, x_d / 2)
-		ax_ybound = (y_d / -2, y_d / 2)
-		node_size = (2 * node_r) ** 2
-		pos = {
-			v: (
-				r * math.cos(math.pi / 2 - (i + 1) * 2 * math.pi / n),
-				r * math.sin(math.pi / 2 - (i + 1) * 2 * math.pi / n)
-			)
-			for i, v in enumerate(vs)
-		}
-		label = {i: v for i, v in enumerate(vs)}
-		configs[n] = {
-			'font_size': font_size,
-			'fig_size': fig_size,
-			'ax_xbound': ax_xbound,
-			'ax_ybound': ax_ybound,
-			'node_size': node_size,
-			'pos': pos,
-			'label': label
-		}
-	return configs
+def config(n : int) -> Dict[str, Any]:
+	font_size = 12
+	node_r = (len(str(n)) + 1) * font_size / 2
+	r = max(2 * n * node_r / math.pi, 3 * node_r)
+	x_d = 2 * r + 4 * node_r
+	y_d = 2 * r + 4 * node_r
+	vs = ['x{}'.format(i + 1) for i in range(n)]
+	fig_size = (x_d / 72, y_d / 72)
+	ax_xbound = (x_d / -2, x_d / 2)
+	ax_ybound = (y_d / -2, y_d / 2)
+	node_size = (2 * node_r) ** 2
+	pos = {
+		v: (
+			r * math.cos(math.pi / 2 - (i + 1) * 2 * math.pi / n),
+			r * math.sin(math.pi / 2 - (i + 1) * 2 * math.pi / n)
+		)
+		for i, v in enumerate(vs)
+	}
+	label = {i: v for i, v in enumerate(vs)}
+	config = {
+		'font_size': font_size,
+		'fig_size': fig_size,
+		'ax_xbound': ax_xbound,
+		'ax_ybound': ax_ybound,
+		'node_size': node_size,
+		'pos': pos,
+		'label': label
+	}
+	return config
 
-def draw(datum : Dict[str, Any], path : Path, configs : Dict[int, Dict[str, Any]]) -> None:
-	path_img = path / '{}.svg'.format(datum['hash'])
-	n, m = metric_dimension.graph6_decode(datum['graph'])
-	config = configs[n]
+def draw(m : npt.NDArray[np.bool_], path_img : Path, config : Dict[str, Any]) -> None:
 	_, ax = plt.subplots(figsize=config['fig_size']) # pyright: ignore
 	ax.set_xlim(*config['ax_xbound'])
 	ax.set_ylim(*config['ax_ybound'])
