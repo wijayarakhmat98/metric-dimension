@@ -6,8 +6,12 @@ import sys
 from typing import Any, Dict, List
 from utils import parse_args
 
-def decode(result : str, r : str) -> Dict[str, Any]:
+def decode(result : str) -> Dict[str, Any]:
 	datum : Dict[str, Any] = json.loads(result)
+	return datum
+
+def decode_then_remove(result : str, r : str) -> Dict[str, Any]:
+	datum = decode(result)
 	keys_del = [key for key in datum if re.search(r, key)]
 	for key in keys_del:
 		if re.search(r, key):
@@ -21,11 +25,10 @@ def format(results : List[str], option_raw : List[str], *args : object, **kwargs
 	])
 	if not option['not-help'] or not option['r']:
 		usage()
-	bind_decode = partial(decode, r=option['r'])
+	bind_decode_then_remove = partial(decode_then_remove, r=option['r'])
 	with multiprocessing.Pool() as pool:
-		data = list(pool.imap_unordered(bind_decode, results))
-	for datum in data:
-		print(json.dumps(datum))
+		for datum in pool.imap_unordered(bind_decode_then_remove, results):
+			print(json.dumps(datum))
 
 def usage() -> None:
 	print(

@@ -8,6 +8,5 @@ def decode(result : str) -> Dict[str, Any]:
 
 def format(results : List[str], *args : object, **kwargs : object) -> None:
 	with multiprocessing.Pool() as pool:
-		data = list(pool.imap_unordered(decode, results))
-	for datum in data:
-		print(json.dumps(datum, indent=2))
+		for datum in pool.imap(decode, results):
+			print(json.dumps(datum, indent=2))

@@ -9,17 +9,26 @@ import networkx as nx
 from pathlib import Path
 import re
 import sys
-from typing import Any, Dict, List, Set
+from typing import Any, cast, Dict, List, Set
 from utils import hash, parse_args
 
 def decode(result : str) -> Dict[str, Any]:
 	datum : Dict[str, Any] = json.loads(result)
+	return datum
+
+def decode_vertices(result : str) -> int:
+	datum = decode(result)
 	if 'vertices' not in datum:
 		n, _ = metric_dimension.graph6_decode(datum['graph'])
-		datum['vertices'] = n
+		return n
+	return cast(int, datum['vertices'])
+
+def decode_then_draw(result : str, path : Path, configs : Dict[int, Dict[str, Any]]) -> Dict[str, Any]:
+	datum = decode(result)
 	if 'hash' not in datum:
 		h = hash(datum['graph'])
 		datum['hash'] = h
+	draw(datum, path, configs)
 	return datum
 
 def format(results : List[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
@@ -30,15 +39,14 @@ def format(results : List[str], option_raw : List[str], *args : object, **kwargs
 	if not option['not-help'] or not option['path']:
 		usage()
 	with multiprocessing.Pool() as pool:
-		data = list(pool.imap_unordered(decode, results))
+		ns = set(pool.imap_unordered(decode_vertices, results))
 	path = Path(option['path'])
 	path.mkdir(parents=True, exist_ok=True)
-	bound_draw = partial(draw, path=path, configs=configs(data))
+	bound_decode_then_draw = partial(decode_then_draw, path=path, configs=configs(ns))
 	matplotlib.use('Agg')
 	with multiprocessing.Pool() as pool:
-		list(pool.imap_unordered(bound_draw, data))
-	for datum in data:
-		print(json.dumps(datum))
+		for datum in pool.imap_unordered(bound_decode_then_draw, results):
+			print(json.dumps(datum))
 
 def usage() -> None:
 	print(
@@ -56,8 +64,7 @@ def usage() -> None:
 	)
 	sys.exit()
 
-def configs(data : List[Dict[str, Any]]) -> Dict[int, Dict[str, Any]]:
-	ns : Set[int] = {datum['vertices'] for datum in data}
+def configs(ns : Set[int]) -> Dict[int, Dict[str, Any]]:
 	configs : Dict[int, Dict[str, Any]] = {}
 	for n in ns:
 		font_size = 12

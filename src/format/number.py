@@ -17,8 +17,12 @@ def format_number(x : float, o : int, p : int, u : str) -> Union[int, float, str
 	else:
 		return y
 
-def decode(result : str, r : str, format_number : Callable[[float], Union[float, str]]) -> Dict[str, Any]:
+def decode(result : str) -> Dict[str, Any]:
 	datum : Dict[str, Any] = json.loads(result)
+	return datum
+
+def decode_then_format_number(result : str, r : str, format_number : Callable[[float], Union[float, str]]) -> Dict[str, Any]:
+	datum = decode(result)
 	for key, value in datum.items():
 		if re.search(r, key):
 			datum[key] = format_number(value)
@@ -35,11 +39,10 @@ def format(results : List[str], option_raw : List[str], *args : object, **kwargs
 	if not option['not-help'] or not option['r']:
 		usage()
 	bind_format_number = partial(format_number, o=int(option['o']), p=int(option['p']), u=option['u'])
-	bind_decode = partial(decode, r=option['r'], format_number=bind_format_number)
+	bind_decode_then_format_number = partial(decode_then_format_number, r=option['r'], format_number=bind_format_number)
 	with multiprocessing.Pool() as pool:
-		data = list(pool.imap_unordered(bind_decode, results))
-	for datum in data:
-		print(json.dumps(datum))
+		for datum in pool.imap_unordered(bind_decode_then_format_number, results):
+			print(json.dumps(datum))
 
 def usage() -> None:
 	print(
