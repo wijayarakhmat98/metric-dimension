@@ -39,7 +39,7 @@ def usage() -> None:
 
 			options:
 				-r=<pattern>, --regex=<pattern>
-				 Remove keys that matches with this pattern.
+					Remove keys that matches with this pattern.
 		'''
 		).strip(),
 		file=sys.stderr
