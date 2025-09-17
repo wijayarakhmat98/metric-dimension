@@ -79,7 +79,7 @@ def debug(graph : str, option_raw : List[str], *args : object, **kwargs : object
 	print('Total count: {}'.format(total_count))
 	print()
 
-	for stage in range(2, N):
+	for stage in range(2, n):
 		if stage == l + 1:
 			break
 		if len(q) == 0:
