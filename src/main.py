@@ -86,7 +86,7 @@ class ProtocolFormat(Protocol):
 
 def main_format(args : List[str]) -> None:
 	option = parse_args(args, [
-		(['-m', '--module'], 'module_name', 'identity')
+		(['-m', '--module'], 'module_name', 'sort')
 	])
 	format = cast(ProtocolFormat, load_module('format.{}'.format(option['module_name'])))
 	results = read_file(sys.stdin)
