@@ -9,7 +9,7 @@ import metric_dimension
 import re
 import sys
 from types import ModuleType
-from typing import Any, cast, Dict, List, Protocol, TextIO
+from typing import Any, cast, Dict, Iterator, List, Protocol, Self, Set, TextIO
 from utils import parse_args
 
 def main(args : List[str]) -> None:
@@ -73,16 +73,16 @@ def main_process(args : List[str]) -> None:
 	if option['filename']:
 		with open(option['filename'], 'r') as file:
 			results = read_file(file)
-		with multiprocessing.Pool() as pool:
-			graphs_exclude = set(pool.imap_unordered(partial(process.resume, option_raw=args), results))
-		graphs = list(set(graphs) - graphs_exclude)
+			with multiprocessing.Pool() as pool:
+				graphs_exclude = set(pool.imap_unordered(partial(process.resume, option_raw=args), results))
+		graphs.set_exclude(graphs_exclude)
 	with multiprocessing.Pool() as pool:
 		for result in pool.imap_unordered(partial(process.process, option_raw=args), graphs):
 			print(result)
 
 class ProtocolFormat(Protocol):
 	def decode(self, s : str) -> Dict[str, Any]: ...
-	def format(self, results : List[str], option_raw : List[str]) -> None: ...
+	def format(self, results : Iterator[str], option_raw : List[str]) -> None: ...
 
 def main_format(args : List[str]) -> None:
 	option = parse_args(args, [
@@ -97,8 +97,27 @@ def hash(s : str) -> str:
 	b64_encoded = base64.urlsafe_b64encode(sha256_hash).decode()
 	return b64_encoded[:10]
 
-def read_file(file : TextIO) -> List[str]:
-	return [line for raw in file if (line := raw.strip())]
+class read_file(Iterator[str]):
+	def __init__(self, file : TextIO, exclude : Set[str] = set()):
+		self.file = file
+		self.exclude = exclude
+
+	def __iter__(self) -> Self:
+		return self
+
+	def __next__(self) -> str:
+		for raw in self.file:
+			line = raw.strip()
+			if not line:
+				continue
+			if line in self.exclude:
+				continue
+			return line
+		raise StopIteration
+
+	def set_exclude(self, exclude : Set[str]) -> Self:
+		self.exclude = exclude
+		return self
 
 def load_module(module_name : str) -> ModuleType:
 	module = importlib.import_module(module_name)

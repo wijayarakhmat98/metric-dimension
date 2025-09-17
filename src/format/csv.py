@@ -1,6 +1,6 @@
 import json
 import multiprocessing
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator
 
 def decode(result : str) -> Dict[str, Any]:
 	datum : Dict[str, Any] = json.loads(result)
@@ -12,7 +12,7 @@ def decode_then_stringify(result : str) -> Dict[str, Any]:
 		datum[key] = str(value)
 	return datum
 
-def format(results : List[str], *args : object, **kwargs : object) -> None:
+def format(results : Iterator[str], *args : object, **kwargs : object) -> None:
 	if not results:
 		return
 	print_header = True

@@ -3,7 +3,7 @@ import json
 import multiprocessing
 import re
 import sys
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, Iterator, List, Union
 from utils import parse_args
 
 def format_number(x : float, o : int, p : int, u : str) -> Union[int, float, str]:
@@ -28,7 +28,7 @@ def decode_then_format_number(result : str, r : str, format_number : Callable[[f
 			datum[key] = format_number(value)
 	return datum
 
-def format(results : List[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
+def format(results : Iterator[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
 	option = parse_args(option_raw, [
 		(['-h', '--help'], 'not-help', 'true'),
 		(['-r', '--regex'], 'r', ''),

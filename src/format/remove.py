@@ -3,7 +3,7 @@ import json
 import multiprocessing
 import re
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, List
 from utils import parse_args
 
 def decode(result : str) -> Dict[str, Any]:
@@ -18,7 +18,7 @@ def decode_then_remove(result : str, r : str) -> Dict[str, Any]:
 			del datum[key]
 	return datum
 
-def format(results : List[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
+def format(results : Iterator[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
 	option = parse_args(option_raw, [
 		(['-h', '--help'], 'not-help', 'true'),
 		(['-r', '--regex'], 'r', ''),

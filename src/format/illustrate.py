@@ -9,7 +9,7 @@ import networkx as nx
 from pathlib import Path
 import re
 import sys
-from typing import Any, cast, Dict, List, Set
+from typing import Any, cast, Dict, Iterator, List, Set
 from utils import hash, parse_args
 
 def decode(result : str) -> Dict[str, Any]:
@@ -31,7 +31,7 @@ def decode_then_draw(result : str, path : Path, configs : Dict[int, Dict[str, An
 	draw(datum, path, configs)
 	return datum
 
-def format(results : List[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
+def format(results : Iterator[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
 	option = parse_args(option_raw, [
 		(['-h', '--help'], 'not-help', 'true'),
 		(['-f', '--folder'], 'path', '')
