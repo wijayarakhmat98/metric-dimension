@@ -36,9 +36,6 @@ def main_usage() -> None:
 					Read results from stdin.
 
 			options:
-				-s, --sort
-					Enable sorting. Some module may ignore this.
-
 				-m=<module name>, --module=<module name>
 
 				-h, --help
@@ -85,16 +82,15 @@ def main_process(args : List[str]) -> None:
 
 class ProtocolFormat(Protocol):
 	def decode(self, s : str) -> Dict[str, Any]: ...
-	def format(self, results : List[str], sort : bool, option_raw : List[str]) -> None: ...
+	def format(self, results : List[str], option_raw : List[str]) -> None: ...
 
 def main_format(args : List[str]) -> None:
 	option = parse_args(args, [
-		(['-s', '--sort'], 'not-sort', 'true'),
 		(['-m', '--module'], 'module_name', 'identity')
 	])
 	format = cast(ProtocolFormat, load_module('format.{}'.format(option['module_name'])))
 	results = read_file(sys.stdin)
-	format.format(results, not option['not-sort'], args)
+	format.format(results, args)
 
 def hash(s : str) -> str:
 	sha256_hash = hashlib.sha256(s.encode()).digest()

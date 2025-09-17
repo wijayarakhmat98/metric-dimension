@@ -22,7 +22,7 @@ def decode(result : str) -> Dict[str, Any]:
 		datum['hash'] = h
 	return datum
 
-def format(results : List[str], sort : bool, option_raw : List[str], *args : object, **kwargs : object) -> None:
+def format(results : List[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
 	option = parse_args(option_raw, [
 		(['-h', '--help'], 'not-help', 'true'),
 		(['-f', '--folder'], 'path', '')
@@ -37,8 +37,6 @@ def format(results : List[str], sort : bool, option_raw : List[str], *args : obj
 	matplotlib.use('Agg')
 	with multiprocessing.Pool() as pool:
 		list(pool.imap_unordered(bound_draw, data))
-	if sort:
-		data.sort(key=lambda datum: datum['graph'])
 	for datum in data:
 		print(json.dumps(datum))
 

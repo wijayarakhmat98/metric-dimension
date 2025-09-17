@@ -14,7 +14,7 @@ def decode(result : str, r : str) -> Dict[str, Any]:
 			del datum[key]
 	return datum
 
-def format(results : List[str], sort : bool, option_raw : List[str], *args : object, **kwargs : object) -> None:
+def format(results : List[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
 	option = parse_args(option_raw, [
 		(['-h', '--help'], 'not-help', 'true'),
 		(['-r', '--regex'], 'r', ''),
@@ -24,8 +24,6 @@ def format(results : List[str], sort : bool, option_raw : List[str], *args : obj
 	bind_decode = partial(decode, r=option['r'])
 	with multiprocessing.Pool() as pool:
 		data = list(pool.imap_unordered(bind_decode, results))
-	if sort:
-		data.sort(key=lambda datum: datum['graph'])
 	for datum in data:
 		print(json.dumps(datum))
 
