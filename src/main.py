@@ -9,7 +9,7 @@ import metric_dimension
 import re
 import sys
 from types import ModuleType
-from typing import Any, cast, Dict, Iterator, List, Protocol, Self, Set, TextIO
+from typing import Any, cast, Dict, Iterator, List, Protocol, Self, TextIO
 from utils import parse_args
 
 def main(args : List[str]) -> None:
@@ -29,7 +29,7 @@ def main_usage() -> None:
 			usage:
 				d|debug <graph6 string> [-m=<debug module>]
 
-				p|process [--resume=<result file>] [-m=<process module>]
+				p|process [-m=<process module>]
 					Read graphs from stdin.
 
 				f|format [-s] [-m=<format module>]
@@ -61,21 +61,13 @@ def main_debug(args : List[str]) -> None:
 
 class ProtocolProcess(Protocol):
 	def process(self, graph : str, option_raw : List[str]) -> str: ...
-	def resume(self, result : str, option_raw : List[str]) -> str: ...
 
 def main_process(args : List[str]) -> None:
 	option = parse_args(args, [
-		(['--resume'], 'filename', ''),
 		(['-m', '--module'], 'module_name', 'identity')
 	])
 	process = cast(ProtocolProcess, load_module('process.{}'.format(option['module_name'])))
 	graphs = read_file(sys.stdin)
-	if option['filename']:
-		with open(option['filename'], 'r') as file:
-			results = read_file(file)
-			with multiprocessing.Pool() as pool:
-				graphs_exclude = set(pool.imap_unordered(partial(process.resume, option_raw=args), results))
-		graphs.set_exclude(graphs_exclude)
 	with multiprocessing.Pool() as pool:
 		for result in pool.imap_unordered(partial(process.process, option_raw=args), graphs):
 			print(result)
@@ -98,9 +90,8 @@ def hash(s : str) -> str:
 	return b64_encoded[:10]
 
 class read_file(Iterator[str]):
-	def __init__(self, file : TextIO, exclude : Set[str] = set()):
+	def __init__(self, file : TextIO):
 		self.file = file
-		self.exclude = exclude
 
 	def __iter__(self) -> Self:
 		return self
@@ -110,14 +101,8 @@ class read_file(Iterator[str]):
 			line = raw.strip()
 			if not line:
 				continue
-			if line in self.exclude:
-				continue
 			return line
 		raise StopIteration
-
-	def set_exclude(self, exclude : Set[str]) -> Self:
-		self.exclude = exclude
-		return self
 
 def load_module(module_name : str) -> ModuleType:
 	module = importlib.import_module(module_name)
