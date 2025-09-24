@@ -1,7 +1,5 @@
 #!/usr/bin/env python3.13
 
-import base64
-import hashlib
 from functools import partial
 import importlib
 import multiprocessing
@@ -119,11 +117,6 @@ def main_format(args : List[str]) -> None:
 	format = cast(ProtocolFormat, load_module('format.{}'.format(option['module_name'])))
 	results = read_file(sys.stdin)
 	format.format(results, args)
-
-def hash(s : str) -> str:
-	sha256_hash = hashlib.sha256(s.encode()).digest()
-	b64_encoded = base64.urlsafe_b64encode(sha256_hash).decode()
-	return b64_encoded[:10]
 
 class read_file(Iterator[str]):
 	def __init__(self, file : TextIO):
