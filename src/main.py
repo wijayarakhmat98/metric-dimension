@@ -9,7 +9,7 @@ import metric_dimension
 import re
 import sys
 from types import ModuleType
-from typing import Any, cast, Dict, Iterator, List, Protocol, Self, TextIO
+from typing import Any, cast, Dict, Iterator, List, Optional, Protocol, Self, TextIO
 from utils import parse_args
 
 def main(args : List[str]) -> None:
@@ -60,16 +60,30 @@ def main_debug(args : List[str]) -> None:
 	debug.debug(graph, args)
 
 class ProtocolProcess(Protocol):
-	def process(self, graph : str, option_raw : List[str]) -> str: ...
+	def decode(self, result : str) -> Dict[str, Any]: ...
+	def transform(self, datum : Dict[str, Any]) -> Dict[str, Any]: ...
+	def encode(self, datum : Dict[str, Any]) -> str: ...
+
+process : Optional[ProtocolProcess] = None
+
+def process_compose(result : str, module_name : str) -> str:
+	global process
+	if process is None:
+		process = cast(ProtocolProcess, load_module('process.{}'.format(module_name)))
+	datum = process.decode(result)
+	datum = process.transform(datum)
+	result = process.encode(datum)
+	return result
 
 def main_process(args : List[str]) -> None:
 	option = parse_args(args, [
 		(['-m', '--module'], 'module_name', 'identity')
 	])
-	process = cast(ProtocolProcess, load_module('process.{}'.format(option['module_name'])))
-	graphs = read_file(sys.stdin)
+	module_name = option['module_name']
+	bound_process_compose = partial(process_compose, module_name=module_name)
+	results = read_file(sys.stdin)
 	with multiprocessing.Pool() as pool:
-		for result in pool.imap_unordered(partial(process.process, option_raw=args), graphs):
+		for result in pool.imap_unordered(bound_process_compose, results):
 			print(result)
 
 class ProtocolFormat(Protocol):
