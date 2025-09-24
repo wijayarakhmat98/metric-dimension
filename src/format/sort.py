@@ -2,26 +2,29 @@ import json
 import multiprocessing
 import re
 import sys
-from typing import Any, Dict, Iterator, List
-from utils import parse_args
+from typing import Any, cast, Dict, Iterator, List, Tuple
+from utils import parse_args, parse_switch
 
 def decode(result : str) -> Dict[str, Any]:
 	datum : Dict[str, Any] = json.loads(result)
 	return datum
 
 def format(results : Iterator[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
-	option = parse_args(option_raw, [
-		(['-h', '--help'], 'not-help', 'true'),
-		(['-r', '--regex'], 'r', 'graph'),
-		(['-d', '--descending'], 'not-d', 'true')
-	])
-	if not option['not-help'] or not option['r']:
+	help, regex, is_descending = cast(
+		Tuple[bool, str, bool],
+		parse_args(option_raw, [
+			(['-h', '--help'], False, parse_switch),
+			(['-r', '--regex'], 'graph', None),
+			(['-d', '--descending'], False, parse_switch)
+		])
+	)
+	if help or not regex:
 		usage()
 	with multiprocessing.Pool() as pool:
 		data = list(pool.imap_unordered(decode, results))
-	key = next((key for key in data[0].keys() if re.search(option['r'], key)), None)
+	key = next((key for key in data[0].keys() if re.search(regex, key)), None)
 	if key:
-		data.sort(key=lambda datum: datum[key], reverse=(not option['not-d']))
+		data.sort(key=lambda datum: datum[key], reverse=is_descending)
 	for datum in data:
 		print(json.dumps(datum))
 

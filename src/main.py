@@ -8,7 +8,7 @@ import re
 import sys
 from types import ModuleType
 from typing import Any, Callable, cast, Dict, Iterator, List, Optional, Protocol, Self, TextIO, Tuple
-from utils import parse_args
+from utils import parse_args, parse_switch
 
 def main(args : List[str]) -> None:
 	metric_dimension.__njit_compile__()
@@ -37,7 +37,7 @@ def main_usage() -> None:
 				-m=<module name>, --module=<module name>
 
 				-h, --help
-					A module may have a help page.
+					Prints the module help page.
 		'''
 		).strip(),
 		file=sys.stderr
@@ -51,37 +51,61 @@ def main_debug(args : List[str]) -> None:
 	if len(args) < 1:
 		main_usage()
 	graph = args[0]
-	option = parse_args(args[1:], [
-		(['-m', '--module'], 'module_name', 'b')
-	])
-	debug = cast(ProtocolDebug, load_module('debug.{}'.format(option['module_name'])))
+	module_name, = cast(
+		Tuple[str],
+		parse_args(args[1:], [
+			(['-m', '--module'], 'b', None)
+		])
+	)
+	debug = cast(ProtocolDebug, load_module('debug.{}'.format(module_name)))
 	debug.debug(graph, args)
 
 class ProtocolProcess(Protocol):
 	preserve_order : bool
 	header : Optional[Callable[[Dict[str, Any]], str]]
 	decode : Callable[[str], Dict[str, Any]]
-	transform : Callable[[Dict[str, Any]], Dict[str, Any]]
+	make_transform : Callable[[Tuple[Any, ...]], Callable[[Dict[str, Any]], Dict[str, Any]]]
 	encode : Callable[[Dict[str, Any]], str]
+	option_spec : Optional[List[Tuple[List[str], Any, Optional[Callable[[str], Any]]]]]
+	option_valid : Optional[Callable[[Tuple[Any, ...]], bool]]
+	help : Callable[[], str]
 
 process : Optional[ProtocolProcess] = None
+process_transform : Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
 
-def process_compose(result : str, module_name : str) -> Tuple[Dict[str, Any], str]:
-	global process
+def process_compose(result : str, module_name : str, args : List[str]) -> Tuple[Dict[str, Any], str]:
+	global process, process_transform
 	if process is None:
 		process = cast(ProtocolProcess, load_module('process.{}'.format(module_name)))
+	if process_transform is None:
+		if process.option_spec is None:
+			process_option = cast(Tuple[Any, ...], ())
+		else:
+			process_option = parse_args(args, process.option_spec)
+		process_transform = process.make_transform(process_option)
 	datum = process.decode(result)
-	datum = process.transform(datum)
+	datum = process_transform(datum)
 	result = process.encode(datum)
 	return datum, result
 
 def main_process(args : List[str]) -> None:
-	option = parse_args(args, [
-		(['-m', '--module'], 'module_name', 'identity')
-	])
-	module_name = option['module_name']
-	bound_process_compose = partial(process_compose, module_name=module_name)
+	help, module_name = cast(
+		Tuple[bool, str],
+		parse_args(args, [
+			(['-h', '--help'], False, parse_switch),
+			(['-m', '--module'], 'identity', None)
+		])
+	)
+	bound_process_compose = partial(process_compose, module_name=module_name, args=args)
 	process = cast(ProtocolProcess, load_module('process.{}'.format(module_name)))
+	if help:
+		print(process.help(), file=sys.stderr)
+		return
+	if process.option_spec is not None:
+		process_option = parse_args(args, process.option_spec)
+		if process.option_valid is not None and not process.option_valid(process_option):
+			print(process.help(), file=sys.stderr)
+			return
 	results = read_file(sys.stdin)
 	with multiprocessing.Pool() as pool:
 		if process.header is None:
@@ -111,10 +135,13 @@ class ProtocolFormat(Protocol):
 	def format(self, results : Iterator[str], option_raw : List[str]) -> None: ...
 
 def main_format(args : List[str]) -> None:
-	option = parse_args(args, [
-		(['-m', '--module'], 'module_name', 'sort')
-	])
-	format = cast(ProtocolFormat, load_module('format.{}'.format(option['module_name'])))
+	module_name, = cast(
+		Tuple[str],
+		parse_args(args, [
+			(['-m', '--module'], 'sort', None)
+		])
+	)
+	format = cast(ProtocolFormat, load_module('format.{}'.format(module_name)))
 	results = read_file(sys.stdin)
 	format.format(results, args)
 

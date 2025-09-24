@@ -3,8 +3,8 @@ import json
 import multiprocessing
 import re
 import sys
-from typing import Any, Dict, Iterator, List
-from utils import parse_args
+from typing import Any, cast, Dict, Iterator, List, Tuple
+from utils import parse_args, parse_switch
 
 def decode(result : str) -> Dict[str, Any]:
 	datum : Dict[str, Any] = json.loads(result)
@@ -19,13 +19,16 @@ def decode_then_remove(result : str, r : str) -> Dict[str, Any]:
 	return datum
 
 def format(results : Iterator[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
-	option = parse_args(option_raw, [
-		(['-h', '--help'], 'not-help', 'true'),
-		(['-r', '--regex'], 'r', ''),
-	])
-	if not option['not-help'] or not option['r']:
+	help, regex = cast(
+		Tuple[bool, str],
+		parse_args(option_raw, [
+			(['-h', '--help'], False, parse_switch),
+			(['-r', '--regex'], '', None),
+		])
+	)
+	if help or not regex:
 		usage()
-	bind_decode_then_remove = partial(decode_then_remove, r=option['r'])
+	bind_decode_then_remove = partial(decode_then_remove, r=regex)
 	with multiprocessing.Pool() as pool:
 		for datum in pool.imap_unordered(bind_decode_then_remove, results):
 			print(json.dumps(datum))

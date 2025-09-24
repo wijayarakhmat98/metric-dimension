@@ -3,8 +3,8 @@ import json
 import multiprocessing
 import re
 import sys
-from typing import Any, Callable, Dict, Iterator, List, Union
-from utils import parse_args
+from typing import Any, Callable, cast, Dict, Iterator, List, Tuple, Union
+from utils import parse_args, parse_switch
 
 def format_number(x : float, o : int, p : int, u : str) -> Union[int, float, str]:
 	y : Union[int, float]
@@ -29,17 +29,20 @@ def decode_then_format_number(result : str, r : str, format_number : Callable[[f
 	return datum
 
 def format(results : Iterator[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
-	option = parse_args(option_raw, [
-		(['-h', '--help'], 'not-help', 'true'),
-		(['-r', '--regex'], 'r', ''),
-		(['-o', '--magnitude'], 'o', '0'),
-		(['-p', '--precision'], 'p', '3'),
-		(['-u', '--unit'], 'u', '')
-	])
-	if not option['not-help'] or not option['r']:
+	help, regex, magnitude, precision, unit = cast(
+		Tuple[bool, str, int, int, str],
+		parse_args(option_raw, [
+			(['-h', '--help'], False, parse_switch),
+			(['-r', '--regex'], '', None),
+			(['-o', '--magnitude'], 0, int),
+			(['-p', '--precision'], 3, int),
+			(['-u', '--unit'], '', None)
+		])
+	)
+	if help or not regex:
 		usage()
-	bind_format_number = partial(format_number, o=int(option['o']), p=int(option['p']), u=option['u'])
-	bind_decode_then_format_number = partial(decode_then_format_number, r=option['r'], format_number=bind_format_number)
+	bind_format_number = partial(format_number, o=magnitude, p=precision, u=unit)
+	bind_decode_then_format_number = partial(decode_then_format_number, r=regex, format_number=bind_format_number)
 	with multiprocessing.Pool() as pool:
 		for datum in pool.imap_unordered(bind_decode_then_format_number, results):
 			print(json.dumps(datum))

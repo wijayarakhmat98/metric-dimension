@@ -1,74 +1,69 @@
-from functools import partial
 import json
 import math
 import matplotlib
 import matplotlib.pyplot as plt
 import metric_dimension
-import multiprocessing
 import networkx as nx
 import numpy as np
 import numpy.typing as npt
 from pathlib import Path
 import re
-import sys
-from typing import Any, cast, Dict, Iterator, List
-from utils import hash, parse_args
+from typing import Any, Callable, cast, Dict, Tuple
+from utils import hash
+
+preserve_order = False
+header = None
 
 def decode(result : str) -> Dict[str, Any]:
-	datum : Dict[str, Any] = json.loads(result)
+	datum = cast(Dict[str, Any], json.loads(result))
 	return datum
-
-def decode_vertices(result : str) -> int:
-	datum = decode(result)
-	if 'vertices' not in datum:
-		n, _ = metric_dimension.graph6_decode(datum['graph'])
-		return n
-	return cast(int, datum['vertices'])
 
 config_cache : Dict[int, Dict[str, Any]] = {}
 
-def decode_then_draw(result : str, path : Path) -> Dict[str, Any]:
-	datum = decode(result)
-	if 'hash' not in datum:
-		h = hash(datum['graph'])
-		datum['hash'] = h
-	path_img = path / '{}.svg'.format(datum['hash'])
-	n, m = metric_dimension.graph6_decode(datum['graph'])
-	if n not in config_cache:
-		config_cache[n] = config(n)
-	draw(m, path_img, config_cache[n])
-	return datum
-
-def format(results : Iterator[str], option_raw : List[str], *args : object, **kwargs : object) -> None:
-	option = parse_args(option_raw, [
-		(['-h', '--help'], 'not-help', 'true'),
-		(['-f', '--folder'], 'path', '')
-	])
-	if not option['not-help'] or not option['path']:
-		usage()
-	path = Path(option['path'])
+def make_transform(option : Tuple[Any, ...]) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+	path, = cast(Tuple[Path], option)
 	path.mkdir(parents=True, exist_ok=True)
-	bound_decode_then_draw = partial(decode_then_draw, path=path)
 	matplotlib.use('Agg')
-	with multiprocessing.Pool() as pool:
-		for datum in pool.imap_unordered(bound_decode_then_draw, results):
-			print(json.dumps(datum))
+	def transform(datum : Dict[str, Any]) -> Dict[str, Any]:
+		if 'hash' in datum:
+			h = cast(str, datum['hash'])
+		else:
+			h = hash(datum['graph'])
+			datum['hash'] = h
+		path_img = path / '{}.svg'.format(datum['hash'])
+		n, m = metric_dimension.graph6_decode(datum['graph'])
+		if n not in config_cache:
+			config_cache[n] = config(n)
+		draw(m, path_img, config_cache[n])
+		return datum
+	return transform
 
-def usage() -> None:
-	print(
-		re.sub(r'\n\t\t\t', r'\n',
-		'''
-			usage:
-				... <-f=<pattern>>
+def encode(datum : Dict[str, Any]) -> str:
+	return json.dumps(datum)
 
-			options:
-				-f=<path>, --folder=<path>
-				 Write output to this location.
-		'''
-		).strip(),
-		file=sys.stderr
-	)
-	sys.exit()
+option_spec = [
+	(['-f', '--folder'], '', Path)
+]
+
+def option_valid(option : Tuple[Any, ...]) -> bool:
+	path, = cast(Tuple[str], option)
+	if not path:
+		return False
+	return True
+
+def help() -> str:
+	return re.sub(r'\n\t\t', r'\n',
+	'''
+		Create illustration for each graph.
+
+		usage:
+			... <-f=<pattern>>
+
+		options:
+			-f=<path>, --folder=<path>
+				Write output to this location.
+	'''
+	).strip()
 
 def config(n : int) -> Dict[str, Any]:
 	font_size = 12

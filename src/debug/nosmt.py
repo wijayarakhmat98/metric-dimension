@@ -4,29 +4,27 @@ import numpy as np
 import numpy.typing as npt
 import re
 import sys
-from typing import List
-from utils import timer, parse_args
+from typing import cast, List, Tuple
+from utils import parse_args, parse_switch, timer
 
 class timer_ms(timer):
 	def __str__(self) -> str:
 		return '{}ms'.format(round(1000 * float(self), 3))
 
 def debug(graph : str, option_raw : List[str], *args : object, **kwargs : object) -> None:
-	option = parse_args(option_raw, [
-		(['-h', '--help'], 'not-help', 'true'),
-		(['-k'], 'k', '1'),
-		(['-l'], 'l', '-1'),
-		(['-p'], 'not-p', 'true'),
-		(['-q'], 'not-q', 'true')
-	])
-	option['help'] = '' if option['not-help'] else 'true'
-	option['p'] = '' if option['not-p'] else 'true'
-	option['q'] = '' if option['not-q'] else 'true'
+	help, k, l, print_p, print_q = cast(
+		Tuple[bool, int, int, bool, bool],
+		parse_args(option_raw, [
+			(['-h', '--help'], False, parse_switch),
+			(['-k'], 1, int),
+			(['-l'], -1, int),
+			(['-p'], False, parse_switch),
+			(['-q'], False, parse_switch)
+		])
+	)
 
-	if option['help'] or not option['k']:
+	if help:
 		usage()
-	k = int(option['k'])
-	l = int(option['l'])
 
 	n, m = metric_dimension.graph6_decode(graph)
 	vs = metric_dimension.vertices(n)
@@ -37,7 +35,7 @@ def debug(graph : str, option_raw : List[str], *args : object, **kwargs : object
 	d = metric_dimension.distance_matrix(m)
 
 	p = metric_dimension.distance_similarity(d)
-	if option['p']:
+	if print_p:
 		print('Distance similarity...')
 		for row in p:
 			print('  {}'.format(row.astype(int)))
@@ -67,7 +65,7 @@ def debug(graph : str, option_raw : List[str], *args : object, **kwargs : object
 		if is_carried:
 			q_.append(combine)
 			last_.append(j)
-		if option['q']:
+		if print_q:
 			print('  {} [{}] -> {} ({})'.format(combine.astype(int), j, c, 'Carried' if is_carried else 'Removed'))
 		number_of_constraints += 1
 	q = q_
@@ -101,7 +99,7 @@ def debug(graph : str, option_raw : List[str], *args : object, **kwargs : object
 				if is_carried:
 					q_.append(combine)
 					last_.append(j)
-				if option['q']:
+				if print_q:
 					print('  {} [{}] -> {} ({})'.format(combine.astype(int), j, c, 'Carried' if is_carried else 'Removed'))
 				number_of_constraints += 1
 		q = q_
