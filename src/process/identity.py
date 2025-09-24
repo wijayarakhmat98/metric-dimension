@@ -2,6 +2,7 @@ import json
 from typing import Any, Dict
 
 preserve_order = False
+header = None
 
 def decode(result : str) -> Dict[str, Any]:
 	return {

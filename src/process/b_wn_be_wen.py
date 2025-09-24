@@ -4,6 +4,7 @@ from utils import timer
 from typing import Any, cast, Dict
 
 preserve_order = False
+header = None
 
 def decode(result : str) -> Dict[str, Any]:
 	datum = cast(Dict[str, Any], json.loads(result))
