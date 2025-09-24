@@ -60,6 +60,7 @@ def main_debug(args : List[str]) -> None:
 	debug.debug(graph, args)
 
 class ProtocolProcess(Protocol):
+	preserve_order : bool
 	def decode(self, result : str) -> Dict[str, Any]: ...
 	def transform(self, datum : Dict[str, Any]) -> Dict[str, Any]: ...
 	def encode(self, datum : Dict[str, Any]) -> str: ...
@@ -81,10 +82,15 @@ def main_process(args : List[str]) -> None:
 	])
 	module_name = option['module_name']
 	bound_process_compose = partial(process_compose, module_name=module_name)
+	process = cast(ProtocolProcess, load_module('process.{}'.format(module_name)))
 	results = read_file(sys.stdin)
 	with multiprocessing.Pool() as pool:
-		for result in pool.imap_unordered(bound_process_compose, results):
-			print(result)
+		if process.preserve_order:
+			for result in pool.imap(bound_process_compose, results):
+				print(result)
+		else:
+			for result in pool.imap_unordered(bound_process_compose, results):
+				print(result)
 
 class ProtocolFormat(Protocol):
 	def decode(self, s : str) -> Dict[str, Any]: ...
