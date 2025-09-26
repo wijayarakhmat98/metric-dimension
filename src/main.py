@@ -5,10 +5,13 @@ import importlib
 import multiprocessing
 import metric_dimension
 import re
+import signal
 import sys
 from types import ModuleType
 from typing import Any, Callable, cast, Dict, Iterator, List, Optional, Protocol, Self, TextIO, Tuple
 from utils import parse_args, parse_switch
+
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 def main(args : List[str]) -> None:
 	metric_dimension.__njit_compile__()
@@ -101,34 +104,37 @@ def main_process(args : List[str]) -> None:
 	if help:
 		print(process.help(), file=sys.stderr)
 		return
-	if process.option_spec is not None:
+	if process.option_spec is not None and process.option_valid is not None:
 		process_option = parse_args(args, process.option_spec)
-		if process.option_valid is not None and not process.option_valid(process_option):
+		if not process.option_valid(process_option):
 			print(process.help(), file=sys.stderr)
 			return
 	results = read_file(sys.stdin)
-	with multiprocessing.Pool() as pool:
-		if process.header is None:
-			if process.preserve_order:
-				for _, result in pool.imap(bound_process_compose, results):
-					print(result)
+	try:
+		with multiprocessing.Pool() as pool:
+			if process.header is None:
+				if process.preserve_order:
+					for _, result in pool.imap(bound_process_compose, results):
+						print(result)
+				else:
+					for _, result in pool.imap_unordered(bound_process_compose, results):
+						print(result)
 			else:
-				for _, result in pool.imap_unordered(bound_process_compose, results):
-					print(result)
-		else:
-			print_header = True
-			if process.preserve_order:
-				for datum, result in pool.imap(bound_process_compose, results):
-					if print_header:
-						print(process.header(datum))
-						print_header = False
-					print(result)
-			else:
-				for datum, result in pool.imap_unordered(bound_process_compose, results):
-					if print_header:
-						print(process.header(datum))
-						print_header = False
-					print(result)
+				print_header = True
+				if process.preserve_order:
+					for datum, result in pool.imap(bound_process_compose, results):
+						if print_header:
+							print(process.header(datum))
+							print_header = False
+						print(result)
+				else:
+					for datum, result in pool.imap_unordered(bound_process_compose, results):
+						if print_header:
+							print(process.header(datum))
+							print_header = False
+						print(result)
+	except BrokenPipeError:
+		return
 
 class ProtocolFormat(Protocol):
 	def decode(self, s : str) -> Dict[str, Any]: ...

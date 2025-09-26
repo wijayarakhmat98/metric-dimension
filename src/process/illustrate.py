@@ -46,7 +46,7 @@ option_spec = [
 ]
 
 def option_valid(option : Tuple[Any, ...]) -> bool:
-	path, = cast(Tuple[str], option)
+	path, = cast(Tuple[Path], option)
 	if not path:
 		return False
 	return True
