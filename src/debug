@@ -27,7 +27,7 @@ def main(args : List[str]) -> None:
 	if not module_name:
 		print(help(), file=sys.stderr)
 		return
-	debug = cast(ProtocolDebug, load_module('debug.{}'.format(module_name)))
+	debug = cast(ProtocolDebug, load_module('debug_module.{}'.format(module_name)))
 	debug.debug(graph, args)
 
 def help() -> str:

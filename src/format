@@ -24,7 +24,7 @@ def main(args : List[str]) -> None:
 	if not module_name:
 		print(help(), file=sys.stderr)
 		return
-	format = cast(ProtocolFormat, load_module('format.{}'.format(module_name)))
+	format = cast(ProtocolFormat, load_module('format_module.{}'.format(module_name)))
 	results = read_file(sys.stdin)
 	format.format(results, args)
 
