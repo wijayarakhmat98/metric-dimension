@@ -1,6 +1,7 @@
 import json
 import math
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import metric_dimension
 import networkx as nx
@@ -8,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 from pathlib import Path
 import re
-from typing import Any, Callable, cast, Dict, Tuple
+from typing import Any, cast, Dict, Tuple
 from utils import hash
 
 preserve_order = False
@@ -20,23 +21,20 @@ def decode(result : str) -> Dict[str, Any]:
 
 config_cache : Dict[int, Dict[str, Any]] = {}
 
-def make_transform(option : Tuple[Any, ...]) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+def transform(datum : Dict[str, Any], option : Tuple[Any, ...]) -> Dict[str, Any]:
 	path, = cast(Tuple[Path], option)
 	path.mkdir(parents=True, exist_ok=True)
-	matplotlib.use('Agg')
-	def transform(datum : Dict[str, Any]) -> Dict[str, Any]:
-		if 'hash' in datum:
-			h = cast(str, datum['hash'])
-		else:
-			h = hash(datum['graph'])
-			datum['hash'] = h
-		path_img = path / '{}.svg'.format(datum['hash'])
-		n, m = metric_dimension.graph6_decode(datum['graph'])
-		if n not in config_cache:
-			config_cache[n] = config(n)
-		draw(m, path_img, config_cache[n])
-		return datum
-	return transform
+	if 'hash' in datum:
+		h = cast(str, datum['hash'])
+	else:
+		h = hash(datum['graph'])
+		datum['hash'] = h
+	path_img = path / '{}.svg'.format(datum['hash'])
+	n, m = metric_dimension.graph6_decode(datum['graph'])
+	if n not in config_cache:
+		config_cache[n] = config(n)
+	draw(m, path_img, config_cache[n])
+	return datum
 
 def encode(datum : Dict[str, Any]) -> str:
 	return json.dumps(datum)

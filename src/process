@@ -15,27 +15,20 @@ class ProtocolProcess(Protocol):
 	preserve_order : bool
 	header : Optional[Callable[[Dict[str, Any]], str]]
 	decode : Callable[[str], Dict[str, Any]]
-	make_transform : Callable[[Tuple[Any, ...]], Callable[[Dict[str, Any]], Dict[str, Any]]]
+	transform : Callable[[Dict[str, Any], Tuple[Any, ...]], Dict[str, Any]]
 	encode : Callable[[Dict[str, Any]], str]
 	option_spec : Optional[List[Tuple[List[str], Any, Optional[Callable[[str], Any]]]]]
 	option_valid : Optional[Callable[[Tuple[Any, ...]], bool]]
 	help : Callable[[], str]
 
 process : Optional[ProtocolProcess] = None
-process_transform : Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
 
-def process_compose(result : str, module_name : str, args : List[str]) -> Tuple[Dict[str, Any], str]:
-	global process, process_transform
+def process_compose(result : str, module_name : str, option : Tuple[Any, ...]) -> Tuple[Dict[str, Any], str]:
+	global process
 	if process is None:
 		process = cast(ProtocolProcess, load_module('process_module.{}'.format(module_name)))
-	if process_transform is None:
-		if process.option_spec is None:
-			process_option = cast(Tuple[Any, ...], ())
-		else:
-			process_option = parse_args(args, process.option_spec)
-		process_transform = process.make_transform(process_option)
 	datum = process.decode(result)
-	datum = process_transform(datum)
+	datum = process.transform(datum, option)
 	result = process.encode(datum)
 	return datum, result
 
@@ -51,16 +44,18 @@ def main(args : List[str]) -> None:
 	if not module_name:
 		print(help(), file=sys.stderr)
 		return
-	bound_process_compose = partial(process_compose, module_name=module_name, args=args)
 	process = cast(ProtocolProcess, load_module('process_module.{}'.format(module_name)))
 	if print_help:
 		print(process.help(), file=sys.stderr)
 		return
-	if process.option_spec is not None and process.option_valid is not None:
+	if process.option_spec is not None:
 		process_option = parse_args(args, process.option_spec)
-		if not process.option_valid(process_option):
+		if  process.option_valid is not None and not process.option_valid(process_option):
 			print(process.help(), file=sys.stderr)
 			return
+	else:
+		process_option = cast(Tuple[Any, ...], ())
+	bound_process_compose = partial(process_compose, module_name=module_name, option=process_option)
 	results = read_file(sys.stdin)
 	try:
 		with multiprocessing.Pool() as pool:
