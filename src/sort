@@ -1,0 +1,65 @@
+#!/usr/bin/env python3.13
+
+import json
+import multiprocessing
+import re
+import signal
+import sys
+from typing import Any, cast, Dict, List, Tuple
+from utils import parse_args, parse_switch, read_file
+
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+def decode(result : str) -> Dict[str, Any]:
+	datum = cast(Dict[str, Any], json.loads(result))
+	return datum
+
+def encode(datum : Dict[str, Any]) -> str:
+	return json.dumps(datum)
+
+def main(args : List[str]) -> None:
+	print_help, regex, is_descending = cast(
+		Tuple[bool, str, bool],
+		parse_args(args, [
+			(['-h', '--help'], False, parse_switch),
+			(['-r', '--regex'], 'graph', None),
+			(['-d', '--descending'], False, parse_switch)
+		])
+	)
+	if print_help:
+		print(help(), file=sys.stderr)
+		return
+	results = read_file(sys.stdin)
+	with multiprocessing.Pool() as pool:
+		data = list(pool.imap_unordered(decode, results))
+	if not data:
+		return
+	key = next((key for key in data[0].keys() if re.search(regex, key)), None)
+	if key:
+		data.sort(key=lambda datum: datum[key], reverse=is_descending)
+	try:
+		with multiprocessing.Pool() as pool:
+			for result in pool.imap(encode, data):
+				print(result)
+	except BrokenPipeError:
+		return
+
+def help() -> str:
+	return re.sub(r'\n\t\t', r'\n',
+	'''
+		usage:
+			... [-r=<pattern>] [-d]
+
+		options:
+			-r=<pattern>, --regex=<pattern>
+				Sort on the first key that matches with this pattern.
+				Defaults to 'graph'.
+
+			-d, --descending
+				Sort in descending order.
+				Defaults to ascending.
+	'''
+	).strip()
+
+if __name__ == '__main__':
+	main(sys.argv[1:])
