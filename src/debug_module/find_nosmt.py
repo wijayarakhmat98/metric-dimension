@@ -2,14 +2,14 @@ import metric_dimension
 import numba as nb # type: ignore
 import numpy as np
 import numpy.typing as npt
-from typing import List
+from typing import Any, List, Tuple
 from utils import timer
 
 class timer_ms(timer):
 	def __str__(self) -> str:
 		return '{}ms'.format(round(1000 * float(self), 3))
 
-def debug(graph : str, *args : object, **kwargs : object) -> None:
+def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	n, m = metric_dimension.graph6_decode(graph)
 	vs = metric_dimension.vertices(n)
 	print('Graph: {}'.format(graph))
@@ -92,6 +92,12 @@ def find_exact(n : int, q0 : npt.NDArray[np.bool], k : int) -> bool:
 
 	found = count < combination(n, k)
 	return found
+
+option_spec = None
+option_valid = None
+
+def help() -> str:
+	return ''
 
 combination = nb.njit( # pyright: ignore
 	fastmath=True, cache=True

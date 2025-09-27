@@ -3,28 +3,15 @@ import metric_dimension
 import numpy as np
 import numpy.typing as npt
 import re
-import sys
-from typing import cast, List, Tuple
-from utils import parse_args, parse_switch, timer
+from typing import Any, cast, List, Tuple
+from utils import parse_switch, timer
 
 class timer_ms(timer):
 	def __str__(self) -> str:
 		return '{}ms'.format(round(1000 * float(self), 3))
 
-def debug(graph : str, option_raw : List[str], *args : object, **kwargs : object) -> None:
-	help, k, l, print_p, print_q = cast(
-		Tuple[bool, int, int, bool, bool],
-		parse_args(option_raw, [
-			(['-h', '--help'], False, parse_switch),
-			(['-k'], 1, int),
-			(['-l'], -1, int),
-			(['-p'], False, parse_switch),
-			(['-q'], False, parse_switch)
-		])
-	)
-
-	if help:
-		usage()
+def debug(graph : str, option : Tuple[Any, ...]) -> None:
+	k, l, print_p, print_q = cast(Tuple[int, int, bool, bool], option)
 
 	n, m = metric_dimension.graph6_decode(graph)
 	vs = metric_dimension.vertices(n)
@@ -111,28 +98,33 @@ def debug(graph : str, option_raw : List[str], *args : object, **kwargs : object
 		print('Total count: {}'.format(total_count))
 		print()
 
-def usage() -> None:
-	print(
-		re.sub(r'\n\t\t\t', r'\n',
-		'''
-			usage:
-				... <-k=<cadinality>> [-l=<limit>] [-p0] [-p]
+option_spec =  [
+	(['-k'], 1, int),
+	(['-l'], -1, int),
+	(['-p'], False, parse_switch),
+	(['-q'], False, parse_switch)
+]
 
-			options:
-				-k=<cardinality>
-					Count number of invalid solutions for resolving set with cardinality k.
-					Defaults to 1.
+option_valid = None
 
-				-l=<limit>
-					Limit the combination iteration.
+def help() -> str:
+	return re.sub(r'\n\t\t', r'\n',
+	'''
+		usage:
+			... <-k=<cadinality>> [-l=<limit>] [-p0] [-p]
 
-				-p
-					Print the original distance similarity matrix.
+		options:
+			-k=<cardinality>
+				Count number of invalid solutions for resolving set with cardinality k.
+				Defaults to 1.
 
-				-q
-					Print the resulting distance similarity matrix at each step.
-		'''
-		).strip(),
-		file=sys.stderr
-	)
-	sys.exit()
+			-l=<limit>
+				Limit the combination iteration.
+
+			-p
+				Print the original distance similarity matrix.
+
+			-q
+				Print the resulting distance similarity matrix at each step.
+	'''
+	).strip()

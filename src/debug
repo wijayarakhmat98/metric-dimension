@@ -4,13 +4,16 @@ import metric_dimension
 import re
 import signal
 import sys
-from typing import cast, List, Protocol, Tuple
-from utils import load_module, parse_args
+from typing import Any, Callable, cast, List, Optional, Protocol, Tuple
+from utils import load_module, parse_args, parse_switch
 
 signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 class ProtocolDebug(Protocol):
-	def debug(self, graph : str, option_raw : List[str]) -> None: ...
+	debug : Callable[[str, Tuple[Any, ...]], None]
+	option_spec : Optional[List[Tuple[List[str], Any, Optional[Callable[[str], Any]]]]]
+	option_valid : Optional[Callable[[Tuple[Any, ...]], bool]]
+	help : Callable[[], str]
 
 def main(args : List[str]) -> None:
 	metric_dimension.__njit_compile__()
@@ -18,9 +21,10 @@ def main(args : List[str]) -> None:
 		print(help(), file=sys.stderr)
 		return
 	graph = args[0]
-	module_name, = cast(
-		Tuple[str],
+	print_help, module_name = cast(
+		Tuple[bool, str],
 		parse_args(args[1:], [
+			(['-h', '--help'], False, parse_switch),
 			(['-m', '--module'], '', None)
 		])
 	)
@@ -28,7 +32,17 @@ def main(args : List[str]) -> None:
 		print(help(), file=sys.stderr)
 		return
 	debug = cast(ProtocolDebug, load_module('debug_module.{}'.format(module_name)))
-	debug.debug(graph, args)
+	if print_help:
+		print(debug.help(), file=sys.stderr)
+		return
+	if debug.option_spec is not None:
+		debug_option = parse_args(args, debug.option_spec)
+		if debug.option_valid is not None and not debug.option_valid(debug_option):
+			print(debug.help(), file=sys.stderr)
+			return
+	else:
+		debug_option = cast(Tuple[Any, ...], ())
+	debug.debug(graph, debug_option)
 
 def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',

@@ -1,11 +1,12 @@
 import metric_dimension
+from typing import Any, Tuple
 from utils import timer
 
 class timer_ms(timer):
 	def __str__(self) -> str:
 		return '{}ms'.format(round(1000 * float(self), 3))
 
-def debug(graph : str, *args : object, **kwargs : object) -> None:
+def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	n, m = metric_dimension.graph6_decode(graph)
 	vs = metric_dimension.vertices(n)
 	print('Graph: {}'.format(graph))
@@ -33,3 +34,9 @@ def debug(graph : str, *args : object, **kwargs : object) -> None:
 	print('Metric dimension: {}'.format(b))
 	print('Metric dimension time: {}'.format(b_time))
 	print()
+
+option_spec = None
+option_valid = None
+
+def help() -> str:
+	return ''
