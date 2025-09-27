@@ -17,10 +17,6 @@ class ProtocolDebug(Protocol):
 
 def main(args : List[str]) -> None:
 	metric_dimension.__njit_compile__()
-	if len(args) < 1:
-		print(help(), file=sys.stderr)
-		return
-	graph = args[0]
 	print_help, module_name = cast(
 		Tuple[bool, str],
 		parse_args(args[1:], [
@@ -28,9 +24,10 @@ def main(args : List[str]) -> None:
 			(['-m', '--module'], '', None)
 		])
 	)
-	if not module_name:
+	if len(args) < 1 or not module_name:
 		print(help(), file=sys.stderr)
 		return
+	graph = args[0]
 	debug = cast(ProtocolDebug, load_module('debug_module.{}'.format(module_name)))
 	if print_help:
 		print(debug.help(), file=sys.stderr)
