@@ -34,16 +34,16 @@ def process_compose(result : str, module_name : str, option : Tuple[Any, ...]) -
 
 def main(args : List[str]) -> None:
 	metric_dimension.__njit_compile__()
-	print_help, module_name = cast(
-		Tuple[bool, str],
-		parse_args(args, [
-			(['-h', '--help'], False, parse_switch),
-			(['-m', '--module'], '', None)
+	print_help, = cast(
+		Tuple[bool],
+		parse_args(args[1:], [
+			(['-h', '--help'], False, parse_switch)
 		])
 	)
-	if not module_name:
+	if len(args) < 1:
 		print(help(), file=sys.stderr)
 		return
+	module_name = args[0]
 	process = cast(ProtocolProcess, load_module('process_module.{}'.format(module_name)))
 	if print_help:
 		print(process.help(), file=sys.stderr)
@@ -59,27 +59,20 @@ def main(args : List[str]) -> None:
 	results = read_file(sys.stdin)
 	try:
 		with multiprocessing.Pool() as pool:
+			if process.preserve_order:
+				pool_imap = pool.imap
+			else:
+				pool_imap = pool.imap_unordered
 			if process.header is None:
-				if process.preserve_order:
-					for _, result in pool.imap(bound_process_compose, results):
-						print(result)
-				else:
-					for _, result in pool.imap_unordered(bound_process_compose, results):
-						print(result)
+				for _, result in pool_imap(bound_process_compose, results):
+					print(result)
 			else:
 				print_header = True
-				if process.preserve_order:
-					for datum, result in pool.imap(bound_process_compose, results):
-						if print_header:
-							print(process.header(datum))
-							print_header = False
-						print(result)
-				else:
-					for datum, result in pool.imap_unordered(bound_process_compose, results):
-						if print_header:
-							print(process.header(datum))
-							print_header = False
-						print(result)
+				for datum, result in pool_imap(bound_process_compose, results):
+					if print_header:
+						print(process.header(datum))
+						print_header = False
+					print(result)
 	except BrokenPipeError:
 		return
 
@@ -87,12 +80,10 @@ def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',
 	'''
 		usage:
-			<-m=<process module>>
+			<process module>
 				Read graphs from stdin.
 
 		options:
-			-m=<module name>, --module=<module name>
-
 			-h, --help
 				Prints the module help page.
 	'''
