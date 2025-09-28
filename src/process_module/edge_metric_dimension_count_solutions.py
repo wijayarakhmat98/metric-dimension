@@ -1,6 +1,6 @@
 import json
 import metric_dimension
-from utils import timer
+from utils import timer, parse_switch
 from typing import Any, cast, Dict, Tuple
 
 preserve_order = False
@@ -11,6 +11,7 @@ def decode(result : str) -> Dict[str, Any]:
 	return datum
 
 def transform(datum : Dict[str, Any], option : Tuple[Any, ...]) -> Dict[str, Any]:
+	bruteforce, = cast(Tuple[bool], option)
 	graph = datum['graph']
 	n, m = metric_dimension.graph6_decode(graph)
 	vs = metric_dimension.vertices(n)
@@ -21,7 +22,10 @@ def transform(datum : Dict[str, Any], option : Tuple[Any, ...]) -> Dict[str, Any
 	if 'edge_metric_dimension' in graph:
 		be = cast(int, graph['edge_metric_dimension'])
 	else:
-		be = metric_dimension.find(n, vs, pe)
+		if bruteforce:
+			be = metric_dimension.find_bruteforce(n, pe)
+		else:
+			be = metric_dimension.find(n, vs, pe)
 	with timer() as wes_time: wes = metric_dimension.enumerate(n, pe, be)
 	wen = len(wes)
 	datum['edge_metric_dimension_solutions_count'] = wen
@@ -32,7 +36,10 @@ def encode(datum : Dict[str, Any]) -> str:
 	result = json.dumps(datum, default=float)
 	return result
 
-option_spec = None
+option_spec = [
+	(['--bruteforce'], False, parse_switch)
+]
+
 option_valid = None
 
 def help() -> str:
