@@ -9,21 +9,25 @@ import numpy as np
 import numpy.typing as npt
 from pathlib import Path
 import re
-from typing import Any, cast, Dict, Tuple
+from typing import Any, cast, Dict, Optional, Tuple
 from utils import hash
 
 preserve_order = False
 header = None
 
-def decode(result : str) -> Dict[str, Any]:
-	datum = cast(Dict[str, Any], json.loads(result))
-	return datum
+def decode(result : str) -> Optional[Dict[str, Any]]:
+	try:
+		datum = cast(Dict[str, Any], json.loads(result))
+		return datum
+	except:
+		return None
 
 config_cache : Dict[int, Dict[str, Any]] = {}
 
-def transform(datum : Dict[str, Any], option : Tuple[Any, ...]) -> Dict[str, Any]:
+def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Optional[Dict[str, Any]]:
+	if not datum:
+		return None
 	path, = cast(Tuple[Path], option)
-	path.mkdir(parents=True, exist_ok=True)
 	if 'hash' in datum:
 		h = cast(str, datum['hash'])
 	else:
@@ -36,7 +40,9 @@ def transform(datum : Dict[str, Any], option : Tuple[Any, ...]) -> Dict[str, Any
 	draw(m, path_img, config_cache[n])
 	return datum
 
-def encode(datum : Dict[str, Any]) -> str:
+def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
+	if not datum:
+		return None
 	return json.dumps(datum)
 
 option_spec = [
@@ -48,6 +54,11 @@ def option_valid(option : Tuple[Any, ...]) -> bool:
 	if not path:
 		return False
 	return True
+
+def option_augment(option : Tuple[Any, ...]) -> Tuple[Any, ...]:
+	path, = cast(Tuple[Path], option)
+	path.mkdir(parents=True, exist_ok=True)
+	return option
 
 def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',

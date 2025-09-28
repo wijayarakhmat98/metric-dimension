@@ -14,23 +14,33 @@ signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 class ProtocolProcess(Protocol):
 	preserve_order : bool
 	header : Optional[Callable[[Dict[str, Any]], str]]
-	decode : Callable[[str], Dict[str, Any]]
-	transform : Callable[[Dict[str, Any], Tuple[Any, ...]], Dict[str, Any]]
-	encode : Callable[[Dict[str, Any]], str]
+	decode : Callable[[str], Optional[Dict[str, Any]]]
+	transform : Callable[[Optional[Dict[str, Any]], Tuple[Any, ...]], Optional[Dict[str, Any]]]
+	encode : Callable[[Optional[Dict[str, Any]]], Optional[str]]
 	option_spec : Optional[List[Tuple[List[str], Any, Optional[Callable[[str], Any]]]]]
 	option_valid : Optional[Callable[[Tuple[Any, ...]], bool]]
+	option_augment : Optional[Callable[[Tuple[Any, ...]], Tuple[Any, ...]]]
 	help : Callable[[], str]
 
 process : Optional[ProtocolProcess] = None
 
-def process_compose(result : str, module_name : str, option : Tuple[Any, ...]) -> Tuple[Dict[str, Any], str]:
+def process_compose(iresult : str, module_name : str, option : Tuple[Any, ...]) -> Optional[str]:
 	global process
 	if process is None:
 		process = cast(ProtocolProcess, load_module('process_module.{}'.format(module_name)))
-	datum = process.decode(result)
+	datum = process.decode(iresult)
 	datum = process.transform(datum, option)
-	result = process.encode(datum)
-	return datum, result
+	oresult = process.encode(datum)
+	return oresult
+
+def process_compose_for_header(iresult : str, module_name : str, option : Tuple[Any, ...]) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+	global process
+	if process is None:
+		process = cast(ProtocolProcess, load_module('process_module.{}'.format(module_name)))
+	datum = process.decode(iresult)
+	datum = process.transform(datum, option)
+	oresult = process.encode(datum)
+	return datum, oresult
 
 def main(args : List[str]) -> None:
 	metric_dimension.__njit_compile__()
@@ -55,7 +65,8 @@ def main(args : List[str]) -> None:
 			return
 	else:
 		process_option = cast(Tuple[Any, ...], ())
-	bound_process_compose = partial(process_compose, module_name=module_name, option=process_option)
+	if process.option_augment:
+		process_option = process.option_augment(process_option)
 	results = read_file(sys.stdin)
 	try:
 		with multiprocessing.Pool() as pool:
@@ -64,15 +75,20 @@ def main(args : List[str]) -> None:
 			else:
 				pool_imap = pool.imap_unordered
 			if process.header is None:
-				for _, result in pool_imap(bound_process_compose, results):
-					print(result)
+				bound_process_compose = partial(process_compose, module_name=module_name, option=process_option)
+				for result in pool_imap(bound_process_compose, results):
+					if result:
+						print(result)
 			else:
+				bound_process_compose_for_header = partial(process_compose_for_header, module_name=module_name, option=process_option)
 				print_header = True
-				for datum, result in pool_imap(bound_process_compose, results):
-					if print_header:
-						print(process.header(datum))
-						print_header = False
-					print(result)
+				for datum, result in pool_imap(bound_process_compose_for_header, results):
+					if datum:
+						if print_header:
+							print(process.header(datum))
+							print_header = False
+						if result:
+							print(result)
 	except BrokenPipeError:
 		return
 

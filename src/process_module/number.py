@@ -1,22 +1,29 @@
 import json
 import re
-from typing import Any, cast, Dict, Tuple, Union
+from typing import Any, cast, Dict, Optional, Tuple, Union
 
 preserve_order = False
 header = None
 
-def decode(result : str) -> Dict[str, Any]:
-	datum = cast(Dict[str, Any], json.loads(result))
-	return datum
+def decode(result : str) -> Optional[Dict[str, Any]]:
+	try:
+		datum = cast(Dict[str, Any], json.loads(result))
+		return datum
+	except:
+		return None
 
-def transform(datum : Dict[str, Any], option : Tuple[Any, ...]) -> Dict[str, Any]:
+def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Optional[Dict[str, Any]]:
+	if not datum:
+		return None
 	regex, magnitude, precision, unit = cast(Tuple[str, int, int, str], option)
 	for key, value in datum.items():
 		if re.search(regex, key):
 			datum[key] = format_number(value, magnitude, precision, unit)
 	return datum
 
-def encode(datum : Dict[str, Any]) -> str:
+def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
+	if not datum:
+		return None
 	return json.dumps(datum)
 
 option_spec = [
@@ -31,6 +38,8 @@ def option_valid(option : Tuple[Any, ...]) -> bool:
 	if not regex:
 		return False
 	return True
+
+option_augment = None
 
 def help() -> str:
 	return re.sub(r'\n\t\t\t', r'\n',
