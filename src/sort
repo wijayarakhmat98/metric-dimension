@@ -2,6 +2,7 @@
 
 import json
 import multiprocessing
+import os
 import re
 import signal
 import sys
@@ -18,19 +19,27 @@ def encode(datum : Dict[str, Any]) -> str:
 	return json.dumps(datum)
 
 def main(args : List[str]) -> None:
-	print_help, regex, is_descending = cast(
-		Tuple[bool, str, bool],
+	print_help, number_of_threads, regex, is_descending = cast(
+		Tuple[bool, int, str, bool],
 		parse_args(args, [
 			(['-h', '--help'], False, parse_switch),
+			(['-t', '--threads'], -1, int),
 			(['-r', '--regex'], 'graph', None),
 			(['-d', '--descending'], False, parse_switch)
 		])
 	)
+	if number_of_threads < 0:
+		number_of_threads = os.cpu_count() or 1
+		if 'THREADS' in os.environ:
+			try:
+				number_of_threads = int(os.environ['THREADS'])
+			except:
+				pass
 	if print_help:
 		print(help(), file=sys.stderr)
 		return
 	results = read_file(sys.stdin)
-	with multiprocessing.Pool() as pool:
+	with multiprocessing.Pool(processes=number_of_threads) as pool:
 		data = list(pool.imap_unordered(decode, results))
 	if not data:
 		return
@@ -38,7 +47,7 @@ def main(args : List[str]) -> None:
 	if key:
 		data.sort(key=lambda datum: datum[key], reverse=is_descending)
 	try:
-		with multiprocessing.Pool() as pool:
+		with multiprocessing.Pool(processes=number_of_threads) as pool:
 			for result in pool.imap(encode, data):
 				print(result)
 	except BrokenPipeError:
@@ -48,7 +57,8 @@ def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',
 	'''
 		usage:
-			... [-r=<pattern>] [-d]
+			[-r=<pattern>] [-d] [-t=<number of threads>]
+			-h
 
 		options:
 			-r=<pattern>, --regex=<pattern>
@@ -58,6 +68,13 @@ def help() -> str:
 			-d, --descending
 				Sort in descending order.
 				Defaults to ascending.
+
+			-t, --threads
+				Set the amount of threads for multiprocessing.
+				Defaults to the number of logical cores.
+
+			-h, --help
+				Prints this help page.
 	'''
 	).strip()
 

@@ -2,6 +2,7 @@
 
 import multiprocessing
 import metric_dimension
+import os
 import re
 import signal
 import sys
@@ -42,12 +43,20 @@ def process_compose_for_header(iresult : str) -> Tuple[Optional[Dict[str, Any]],
 
 def main(args : List[str]) -> None:
 	metric_dimension.__njit_compile__()
-	print_help, = cast(
-		Tuple[bool],
+	print_help, number_of_threads = cast(
+		Tuple[bool, int],
 		parse_args(args[1:], [
-			(['-h', '--help'], False, parse_switch)
+			(['-h', '--help'], False, parse_switch),
+			(['-t', '--threads'], -1, int)
 		])
 	)
+	if number_of_threads < 0:
+		number_of_threads = os.cpu_count() or 1
+		if 'THREADS' in os.environ:
+			try:
+				number_of_threads = int(os.environ['THREADS'])
+			except:
+				pass
 	if len(args) < 1:
 		print(help(), file=sys.stderr)
 		return
@@ -67,7 +76,7 @@ def main(args : List[str]) -> None:
 		process_option = process.option_augment(process_option)
 	results = read_file(sys.stdin)
 	try:
-		with multiprocessing.Pool(initializer=worker_initialize, initargs=(module_name, process_option)) as pool:
+		with multiprocessing.Pool(processes=number_of_threads, initializer=worker_initialize, initargs=(module_name, process_option)) as pool:
 			if process.preserve_order:
 				pool_imap = pool.imap
 			else:
@@ -92,12 +101,16 @@ def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',
 	'''
 		usage:
-			<process module>
+			<process module> [-t=<number of threads>]
 				Read graphs from stdin.
 
 		options:
 			-h, --help
 				Prints the module help page.
+
+			-t, --threads
+				Set the amount of threads for multiprocessing.
+				Defaults to the number of logical cores.
 	'''
 	).strip()
 
