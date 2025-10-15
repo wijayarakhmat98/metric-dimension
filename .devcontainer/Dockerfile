@@ -1,61 +1,37 @@
-# check=skip=FromPlatformFlagConstDisallowed
+FROM debian:sid
 
-FROM --platform=linux/amd64 debian:bookworm
+RUN apt-get update && \
+    apt-get -y install locales && \
+    sed -i '/en_US.UTF-8/s/^# //g' '/etc/locale.gen' && \
+    locale-gen
 
-ARG username="dev"
+ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
-RUN \
-	sed -i '/PS1.*\\\$/s/\\\$/\\n\0/' '/etc/skel/.bashrc' && \
-	useradd "${username}" -ms '/bin/bash'
+RUN apt-get -y dist-upgrade && \
+    apt-get -y autopurge && \
+    apt-get -y install curl git gnupg less man patch ssh vim
 
-RUN \
-	apt-get update && \
-	apt-get -y dist-upgrade && \
-	apt-get -y autopurge
+RUN apt-get -y install bzip2 nauty
 
-RUN \
-	apt-get -y install locales && \
-	sed -i '/en_US.UTF-8/s/^# //g' '/etc/locale.gen' && \
-	locale-gen
-
-ENV LANG="en_US.UTF-8"
-ENV LANGUAGE="en_US:en"
-ENV LC_ALL="en_US.UTF-8"
-
-RUN \
-	apt-get -y install \
-		bzip2 \
-		curl \
-		nauty \
-		procps
+COPY --chmod=644 '.vimrc' '/etc/skel'
+ARG username='dev'
+RUN sed -i '/PS1.*\\\$/s/\\\$/\\n\0/' '/etc/skel/.bashrc' && \
+    useradd "${username}" -ms '/bin/bash'
 
 USER "${username}"
 
-RUN \
-	curl -L 'https://micro.mamba.pm/api/micromamba/linux-64/latest' | tar -jxC "${HOME}" 'bin/micromamba' && \
-	bash -lc 'micromamba shell init -s bash -r "${HOME}/micromamba"' && \
-	bash -lc 'micromamba config append channels conda-forge' && \
-	bash -lc 'micromamba config set channel_priority strict'
-
 COPY 'environment.yml' '/tmp'
-RUN \
-	bash -lc 'micromamba env -y create -f /tmp/environment.yml -n z3' && \
-	printf "\nmicromamba activate 'z3'\n" >> "${HOME}/.bashrc"
+RUN export SHELL="$(getent passwd "${username}" | cut -d: -f7)" && \
+    export BIN_FOLDER="${HOME}/bin" && \
+    curl -L 'micro.mamba.pm/install.sh' | sh -s && \
+    . ~/.profile && \
+    micromamba env -y create -f '/tmp/environment.yml' -n 'z3' && \
+	  printf "\nmicromamba activate 'z3'\n" >> "${HOME}/.bashrc"
 
 USER root
 
-RUN \
-	apt-get -y install \
-		git \
-		gnupg \
-		less \
-		man \
-		openssh-client \
-		patch \
-		vim
-
-RUN \
-	mkdir /workspaces && \
-	chmod a+rwx /workspaces
+ARG workspaceFolder
+RUN install -d -o "${username}" -g "$(id -gn "${username}")" "${workspaceFolder}" && \
+    ln -s "${workspaceFolder}/host/.vscode" "${workspaceFolder}/.vscode"
 
 USER "${username}"

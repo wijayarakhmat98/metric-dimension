@@ -1,11 +1,10 @@
 {
 	"build": {
+		"args": {
+			"workspaceFolder": "${containerWorkspaceFolder}"
+		},
 		"dockerfile": "Dockerfile"
 	},
-	"runArgs": [
-		"--platform=linux/amd64"
-	],
-	"onCreateCommand": ".devcontainer/config",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -13,5 +12,14 @@
 				"ms-python.python"
 			]
 		}
-	}
+	},
+	"mounts": [
+		{
+			"source": "${localWorkspaceFolder}",
+			"target": "${containerWorkspaceFolder}/host",
+			"type": "bind"
+		}
+	],
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	"workspaceMount": "source=${localWorkspaceFolderBasename},target=${containerWorkspaceFolder},type=volume"
 }
