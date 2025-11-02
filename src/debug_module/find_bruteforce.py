@@ -8,9 +8,8 @@ class timer_ms(timer):
 
 def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	n, m = metric_dimension.graph6_decode(graph)
-	vs = metric_dimension.vertices(n)
 	print('Graph: {}'.format(graph))
-	print('Vertices: {}'.format(len(vs)))
+	print('Vertices: {}'.format(n))
 	print()
 
 	d = metric_dimension.distance_matrix(m)

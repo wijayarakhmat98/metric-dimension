@@ -4,28 +4,20 @@ import numba as nb # type: ignore
 import numpy as np
 import numpy.typing as npt
 import scipy as sp # type: ignore
-from typing import Any, cast, List, Tuple
-import z3 # type: ignore
+from typing import cast, Tuple
 
 def graph6_decode(s : str) -> Tuple[int, npt.NDArray[np.bool_]]:
 	b = s.encode()
 	g = nx.from_graph6_bytes(b) # pyright: ignore
 	n = g.number_of_nodes()
 	m = cast(npt.NDArray[np.bool_], nx.to_numpy_array(g, dtype=np.bool_)) # type: ignore
-	m = m.T
 	return n, m
 
 def graph6_encode(m : npt.NDArray[np.bool_]) -> str:
-	m = m.T
 	g = nx.from_numpy_array(m) # pyright: ignore
 	b = cast(bytes, nx.to_graph6_bytes(g)) # pyright: ignore
 	s = b.decode().strip()
 	return s
-
-def vertices(n : int) -> npt.NDArray[Any]:
-	_vs = [z3.Bool('x{}'.format(i + 1)) for i in range(n)] # pyright: ignore
-	vs = np.array(_vs)
-	return vs
 
 def edges(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.intp]:
 	m = np.triu(m, 1)
@@ -33,9 +25,7 @@ def edges(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.intp]:
 	return es
 
 def distance_matrix(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.int_]:
-	m = m.T
 	d = cast(npt.NDArray[np.float64], sp.sparse.csgraph.floyd_warshall(m, False))
-	d = d.T
 	d_ = d.astype(np.int_)
 	return d_
 
@@ -77,23 +67,6 @@ def distance_similarity(d : npt.NDArray[np.int_]) -> npt.NDArray[np.bool_]:
 	p = p[mask]
 	return p
 
-def find_exact(vs : npt.NDArray[Any], p : npt.NDArray[np.bool_], k : int) -> bool:
-	cs : List[z3.BoolRef] = []
-	cs.append(z3.PbEq([(v, 1) for v in vs], k)) # pyright: ignore
-	p = p[p.sum(axis=1) >= k]
-	for vf in p:
-		cs.append(z3.PbLe([(v, 1) for v in vs[vf]], k - 1)) # pyright: ignore
-	z = z3.Solver()
-	z.add(cs) # pyright: ignore
-	found = cast(bool, z.check() == z3.sat) # pyright: ignore
-	return found
-
-def find(n : int, vs : npt.NDArray[Any], p : npt.NDArray[np.bool_]) -> int:
-	for k in range(n - 1, -1, -1):
-		if not find_exact(vs, p, k):
-			return k + 1
-	return 0
-
 def find_exact_bruteforce(n : int, p : npt.NDArray[np.bool_], k : int) -> bool:
 	p = p[p.sum(axis=1) >= k]
 	idx = np.array(list(range(k)), dtype=np.int_)
@@ -123,44 +96,6 @@ def find_bruteforce(n : int, p : npt.NDArray[np.bool_]) -> int:
 			return k + 1
 	return 0
 
-def enumerate(n : int, p : npt.NDArray[np.bool_], r : int) -> npt.NDArray[np.bool_]:
-	c = 1
-	for i in range(r):
-		c *= n - i
-		c //= i + 1
-	ws : npt.NDArray[np.bool_] = np.empty((c, n), dtype=np.bool_)
-	k = 0
-	idx = np.array(list(range(r)), dtype=np.int_)
-	idx_last = (n - idx - 1)[::-1]
-	choice = np.zeros(n, dtype=np.bool_)
-	choice[idx] = np.True_
-	while True:
-		for row in p:
-			if np.all((choice | row) == row):
-				break
-		else:
-			ws[k] = choice
-			k += 1
-		for i in range(r - 1, -1, -1):
-			if idx[i] != idx_last[i]:
-				break
-		else:
-			ws = ws[:k]
-			return ws
-		choice[idx[i:]] = np.False_
-		idx[i] += 1
-		for j in range(i + 1, r):
-			idx[j] = idx[j - 1] + 1
-		choice[idx[i:]] = np.True_
-
-def resolving_representation(w : npt.NDArray[np.bool_], d : npt.NDArray[np.int_]) -> npt.NDArray[np.int_]:
-	return d[:, w]
-
-def is_resolving_valid(r : npt.NDArray[np.int_]) -> bool:
-	r_ = np.unique(r, axis=0)
-	valid = r.shape[0] == r_.shape[0]
-	return valid
-
 distance_matrix_edge = nb.njit( # pyright: ignore
 	fastmath=True, cache=True
 )(distance_matrix_edge)
@@ -177,10 +112,6 @@ find_bruteforce = nb.njit( # pyright: ignore
 	fastmath=True, cache=True
 )(find_bruteforce)
 
-enumerate = nb.njit( # pyright: ignore
-	fastmath=True, cache=True
-)(enumerate)
-
 def __njit_compile__() -> None:
 	distance_matrix_edge.compile( # type: ignore
 		(nb.types.intp, nb.types.Array(nb.types.intp, 2, 'C'), nb.types.Array(nb.types.intp, 2, 'C'))
@@ -193,7 +124,4 @@ def __njit_compile__() -> None:
 	)
 	find_bruteforce.compile( # type: ignore
 		(nb.types.intp, nb.types.Array(nb.types.bool, 2, 'C'))
-	)
-	enumerate.compile( # type: ignore
-		(nb.types.intp, nb.types.Array(nb.types.bool, 2, 'C'), nb.types.intp)
 	)
