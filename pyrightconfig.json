@@ -1,3 +1,4 @@
 {
+	"reportConstantRedefinition": false,
 	"typeCheckingMode": "strict"
 }

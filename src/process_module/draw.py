@@ -34,10 +34,11 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 		h = hash(datum['graph'])
 		datum['hash'] = h
 	path_img = path / '{}.svg'.format(datum['hash'])
-	n, m = metric_dimension.graph6_decode(datum['graph'])
-	if n not in config_cache:
-		config_cache[n] = config(n)
-	draw(m, path_img, config_cache[n])
+	M = metric_dimension.graph6_decode(datum['graph'])
+	nV = M.shape[0]
+	if nV not in config_cache:
+		config_cache[nV] = config(nV)
+	draw(M, path_img, config_cache[nV])
 	return datum
 
 def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
@@ -104,12 +105,12 @@ def config(n : int) -> Dict[str, Any]:
 	}
 	return config
 
-def draw(m : npt.NDArray[np.bool_], path_img : Path, config : Dict[str, Any]) -> None:
+def draw(M : npt.NDArray[np.float64], path_img : Path, config : Dict[str, Any]) -> None:
 	_, ax = plt.subplots(figsize=config['fig_size']) # pyright: ignore
 	ax.set_xlim(*config['ax_xbound'])
 	ax.set_ylim(*config['ax_ybound'])
-	g = nx.from_numpy_array(m)
-	g = nx.relabel_nodes(g, config['label'])
-	nx.draw(g, pos=config['pos'], with_labels=True, font_size=config['font_size'], node_size=config['node_size'], node_color='white', edgecolors='black') # pyright: ignore
+	G = nx.from_numpy_array(M)
+	G = nx.relabel_nodes(G, config['label'])
+	nx.draw(G, pos=config['pos'], with_labels=True, font_size=config['font_size'], node_size=config['node_size'], node_color='white', edgecolors='black') # pyright: ignore
 	plt.savefig(path_img, bbox_inches='tight', pad_inches=0) # pyright: ignore
 	plt.close()

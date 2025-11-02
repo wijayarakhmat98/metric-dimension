@@ -7,10 +7,10 @@ header = None
 
 def decode(result : str) -> Optional[Dict[str, Any]]:
 	try:
-		graph = result
-		_, _ = metric_dimension.graph6_decode(graph)
+		s = result
+		metric_dimension.graph6_decode(s)
 		return {
-			'graph': result
+			'graph': s
 		}
 	except:
 		return None

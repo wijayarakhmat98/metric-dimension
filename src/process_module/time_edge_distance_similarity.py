@@ -16,13 +16,15 @@ def decode(result : str) -> Optional[Dict[str, Any]]:
 def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Optional[Dict[str, Any]]:
 	if not datum:
 		return None
-	graph = datum['graph']
-	n, m = metric_dimension.graph6_decode(graph)
-	es = metric_dimension.edges(m)
-	d = metric_dimension.distance_matrix(m)
-	de = metric_dimension.distance_matrix_edge(n, d, es)
-	with timer() as pe_time: _ = metric_dimension.distance_similarity(de)
-	datum['edge_distance_similarity_time'] = pe_time
+	s = datum['graph']
+	M = metric_dimension.graph6_decode(s)
+	E = metric_dimension.edges(M)
+	DV = metric_dimension.distance_matrix(M)
+	DE = metric_dimension.edge_distance_matrix(E, DV)
+	D = DE
+	B = metric_dimension.distance_similarity(D)
+	with timer() as P_time: _ = metric_dimension.reduced_distance_similarity(B)
+	datum['edge_distance_similarity_time'] = P_time
 	return datum
 
 def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:

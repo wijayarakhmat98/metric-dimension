@@ -1,7 +1,6 @@
 #!/usr/bin/env python3.13
 
 import multiprocessing
-import metric_dimension
 import os
 import re
 import signal
@@ -42,7 +41,6 @@ def process_compose_for_header(iresult : str) -> Tuple[Optional[Dict[str, Any]],
 	return datum, oresult
 
 def main(args : List[str]) -> None:
-	metric_dimension.__njit_compile__()
 	print_help, number_of_threads = cast(
 		Tuple[bool, int],
 		parse_args(args[1:], [

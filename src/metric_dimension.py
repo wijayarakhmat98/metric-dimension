@@ -1,127 +1,105 @@
-import builtins
 import networkx as nx
-import numba as nb # type: ignore
 import numpy as np
 import numpy.typing as npt
 import scipy as sp # type: ignore
-from typing import cast, Tuple
+from typing import cast
 
-def graph6_decode(s : str) -> Tuple[int, npt.NDArray[np.bool_]]:
+def graph6_decode(s : str) -> npt.NDArray[np.float64]:
 	b = s.encode()
-	g = nx.from_graph6_bytes(b) # pyright: ignore
-	n = g.number_of_nodes()
-	m = cast(npt.NDArray[np.bool_], nx.to_numpy_array(g, dtype=np.bool_)) # type: ignore
-	return n, m
+	G = nx.from_graph6_bytes(b) # pyright: ignore
+	M = nx.to_numpy_array(G).astype(np.float64)
+	return M
 
-def graph6_encode(m : npt.NDArray[np.bool_]) -> str:
-	g = nx.from_numpy_array(m) # pyright: ignore
-	b = cast(bytes, nx.to_graph6_bytes(g)) # pyright: ignore
+def graph6_encode(M : npt.NDArray[np.float64]) -> str:
+	G = nx.from_numpy_array(M)
+	b = cast(bytes, nx.to_graph6_bytes(G)) # pyright: ignore
 	s = b.decode().strip()
 	return s
 
-def edges(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.intp]:
-	m = np.triu(m, 1)
-	es = np.argwhere(m)
-	return es
+def vertices(M : npt.NDArray[np.float64]) -> npt.NDArray[np.int_]:
+	V = cast(npt.NDArray[np.int_], np.arange(M.shape[0]))
+	return V
 
-def distance_matrix(m : npt.NDArray[np.bool_]) -> npt.NDArray[np.int_]:
-	d = cast(npt.NDArray[np.float64], sp.sparse.csgraph.floyd_warshall(m, False))
-	d_ = d.astype(np.int_)
-	return d_
+def edges(M : npt.NDArray[np.float64]) -> npt.NDArray[np.int_]:
+	E = np.argwhere(np.triu(M, 1))
+	return E
 
-def distance_matrix_edge(
-	n : int,
-	d : npt.NDArray[np.int_],
-	es : npt.NDArray[np.intp]
-) -> (
-	npt.NDArray[np.int_]
-):
-	de = np.empty((len(es), n), dtype=np.int_)
-	for i in range(n):
-		for r, (j, k) in builtins.enumerate(es):
-			de[r, i] = min(d[j, i], d[k, i])
-	return de
+def distance_matrix(M : npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+	DV = cast(npt.NDArray[np.float64], sp.sparse.csgraph.floyd_warshall(M, False))
+	return DV
 
-def distance_similarity(d : npt.NDArray[np.int_]) -> npt.NDArray[np.bool_]:
-	N, n = d.shape
-	p : npt.NDArray[np.bool_] = np.empty(((N - 1) * N // 2, n), dtype=np.bool_)
-	k = 0
-	for i, pivot in builtins.enumerate(d):
-		for row in d[i + 1:]:
-			similarity : npt.NDArray[np.bool_] = pivot == row
-			if 0 < similarity.sum() < n:
-				for j in range(k):
-					if np.all(p[j] == similarity):
-						break
-				else:
-					p[k] = similarity
-					k += 1
-	p = p[:k]
-	p = p[np.argsort(p.sum(axis=1))]
-	mask = np.ones(k, dtype=np.bool_)
-	for i, pivot in builtins.enumerate(p):
-		for row in p[i + 1:]:
-			if np.all((pivot | row) == row):
-				mask[i] = np.False_
+def edge_distance_matrix(E : npt.NDArray[np.int_], DV : npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+	nV = DV.shape[0]
+	nE = len(E)
+	DE = np.empty((nV, nE), dtype=np.float64)
+	for i in range(nV):
+		for j, (k, l) in enumerate(E):
+			DE[i, j] = min(DV[i, k], DV[i, l])
+	return DE
+
+def distance_similarity(D : npt.NDArray[np.float64]) -> npt.NDArray[np.bool_]:
+	ROW, COL = D.shape
+	B : npt.NDArray[np.bool_] = np.empty((ROW, (COL - 1) * COL // 2), dtype=np.bool_)
+	i = 0
+	for j in range(COL):
+		for k in range(j + 1, COL):
+			B[:, i] = D[:, j] == D[:, k]
+			i += 1
+	return B
+
+def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.bool_]:
+	COL = B.shape[1]
+	keep = np.ones(COL).astype(np.bool_)
+	# Remove duplicates
+	for j in range(COL):
+		if not keep[j]:
+			continue
+		for k in range(j + 1, COL):
+			if not keep[k]:
+				continue
+			if np.array_equal(B[:, j], B[:, k]):
+				keep[k] = False
+	# Remove subsets
+	for j in range(COL):
+		if not keep[j]:
+			continue
+		for k in range(COL):
+			if j == k:
+				continue
+			if not keep[k]:
+				continue
+			if np.array_equal(B[:, j] | B[:, k], B[:, k]):
+				keep[j] = False
 				break
-	p = p[mask]
-	return p
+	P = B[:, keep]
+	return P
 
-def find_exact_bruteforce(n : int, p : npt.NDArray[np.bool_], k : int) -> bool:
-	p = p[p.sum(axis=1) >= k]
-	idx = np.array(list(range(k)), dtype=np.int_)
-	idx_last = (n - idx - 1)[::-1]
-	choice = np.zeros(n, dtype=np.bool_)
-	choice[idx] = np.True_
+def find_exact_bruteforce(P : npt.NDArray[np.bool_], k : int) -> bool:
+	P = P[:, P.sum(axis=0) >= k]
+	nV, COL = P.shape
+	indices : npt.NDArray[np.int_] = np.arange(k)
 	while True:
-		for row in p:
-			if np.all((choice | row) == row):
+		W = np.zeros(nV).astype(np.bool_)
+		for i in indices:
+			W[i] = True
+		for j in range(COL):
+			if np.array_equal(W | P[:, j], P[:, j]):
 				break
 		else:
 			return True
 		for i in range(k - 1, -1, -1):
-			if idx[i] != idx_last[i]:
+			if indices[i] != i + nV - k:
 				break
 		else:
-			return False
-		choice[idx[i:]] = np.False_
-		idx[i] += 1
+			break
+		indices[i] += 1
 		for j in range(i + 1, k):
-			idx[j] = idx[j - 1] + 1
-		choice[idx[i:]] = np.True_
+			indices[j] = indices[j - 1] + 1
+	return False
 
-def find_bruteforce(n : int, p : npt.NDArray[np.bool_]) -> int:
-	for k in range(n - 1, -1, -1):
-		if not find_exact_bruteforce(n, p, k):
+def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
+	nV = P.shape[0]
+	for k in range(nV - 1, -1, -1):
+		if not find_exact_bruteforce(P, k):
 			return k + 1
-	return 0
-
-distance_matrix_edge = nb.njit( # pyright: ignore
-	fastmath=True, cache=True
-)(distance_matrix_edge)
-
-distance_similarity = nb.njit( # pyright: ignore
-	fastmath=True, cache=True
-)(distance_similarity)
-
-find_exact_bruteforce = nb.njit( # pyright: ignore
-	fastmath=True, cache=True
-)(find_exact_bruteforce)
-
-find_bruteforce = nb.njit( # pyright: ignore
-	fastmath=True, cache=True
-)(find_bruteforce)
-
-def __njit_compile__() -> None:
-	distance_matrix_edge.compile( # type: ignore
-		(nb.types.intp, nb.types.Array(nb.types.intp, 2, 'C'), nb.types.Array(nb.types.intp, 2, 'C'))
-	)
-	distance_similarity.compile( # type: ignore
-		(nb.types.Array(nb.types.intp, 2, 'C'),)
-	)
-	find_exact_bruteforce.compile( # type: ignore
-		(nb.types.intp, nb.types.Array(nb.types.bool, 2, 'C'), nb.types.intp)
-	)
-	find_bruteforce.compile( # type: ignore
-		(nb.types.intp, nb.types.Array(nb.types.bool, 2, 'C'))
-	)
+	return -1
