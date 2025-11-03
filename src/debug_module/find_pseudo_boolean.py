@@ -34,7 +34,7 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	s = z3.Solver()
 
 	print('Metric dimension...')
-	with timer_ms() as k_time:
+	with timer_ms() as total_time:
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			s.push()
@@ -53,7 +53,7 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 		else:
 			k = -1
 	print('Metric dimension: {}'.format(k))
-	print('Metric dimension time: {}'.format(k_time))
+	print('Metric dimension time: {}'.format(total_time))
 	print()
 
 option_spec = None

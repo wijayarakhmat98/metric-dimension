@@ -27,7 +27,7 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print()
 
 	print('Metric dimension...')
-	with timer_ms() as k_time:
+	with timer_ms() as total_time:
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			with timer_ms() as k_time: found = metric_dimension.find_exact_bruteforce(P, k)
@@ -38,7 +38,7 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 		else:
 			k = -1
 	print('Metric dimension: {}'.format(k))
-	print('Metric dimension time: {}'.format(k_time))
+	print('Metric dimension time: {}'.format(total_time))
 	print()
 
 option_spec = None
