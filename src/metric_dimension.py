@@ -48,30 +48,20 @@ def distance_similarity(D : npt.NDArray[np.float64]) -> npt.NDArray[np.bool_]:
 	return B
 
 def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.bool_]:
-	COL = B.shape[1]
-	keep = np.ones(COL).astype(np.bool_)
 	# Remove duplicates
-	for j in range(COL):
-		if not keep[j]:
-			continue
-		for k in range(j + 1, COL):
-			if not keep[k]:
-				continue
-			if np.array_equal(B[:, j], B[:, k]):
-				keep[k] = False
+	P = np.unique(B, axis=1)
 	# Remove subsets
+	COL = P.shape[1]
+	keep = np.ones(COL).astype(np.bool_)
 	for j in range(COL):
-		if not keep[j]:
-			continue
-		for k in range(COL):
-			if j == k:
-				continue
-			if not keep[k]:
-				continue
-			if np.array_equal(B[:, j] | B[:, k], B[:, k]):
-				keep[j] = False
-				break
-	P = B[:, keep]
+		P_j = P[:, [j]]
+		P_other = np.delete(P, j, axis=1)
+		keep_other = np.delete(keep, j)
+		P_other = P_other[:, keep_other]
+		is_subset = np.all((P_j | P_other) == P_other, axis=0)
+		if np.any(is_subset):
+			keep[j] = False
+	P = P[:, keep]
 	return P
 
 def find_exact_bruteforce(P : npt.NDArray[np.bool_], k : int) -> bool:
