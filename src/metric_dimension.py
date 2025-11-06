@@ -1,8 +1,10 @@
+import itertools
 import networkx as nx
 import numpy as np
 import numpy.typing as npt
 import scipy as sp # type: ignore
 from typing import cast
+import z3 # type: ignore
 
 def graph6_decode(s : str) -> npt.NDArray[np.float64]:
 	b = s.encode()
@@ -64,32 +66,74 @@ def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.boo
 	P = P[:, keep]
 	return P
 
-def find_exact_bruteforce(P : npt.NDArray[np.bool_], k : int) -> bool:
-	P = P[:, P.sum(axis=0) >= k]
-	nV, COL = P.shape
-	indices : npt.NDArray[np.int_] = np.arange(k)
-	while True:
-		W = np.zeros(nV).astype(np.bool_)
-		for i in indices:
-			W[i] = True
-		for j in range(COL):
-			if np.array_equal(W | P[:, j], P[:, j]):
-				break
-		else:
+def find_bruteforce_exact(P : npt.NDArray[np.bool_], k : int) -> bool:
+	nV = P.shape[0]
+	_P = P[:, P.sum(axis=0) >= k]
+	combinations = itertools.combinations(range(nV), k)
+	for indices in combinations:
+		W = np.zeros((nV, 1), dtype=np.bool_)
+		W[indices, 0] = True
+		is_subset = np.all((W | _P) == _P, axis=0)
+		if not np.any(is_subset):
 			return True
-		for i in range(k - 1, -1, -1):
-			if indices[i] != i + nV - k:
-				break
-		else:
-			break
-		indices[i] += 1
-		for j in range(i + 1, k):
-			indices[j] = indices[j - 1] + 1
 	return False
 
 def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
 	nV = P.shape[0]
 	for k in range(nV - 1, -1, -1):
-		if not find_exact_bruteforce(P, k):
+		found = find_bruteforce_exact(P, k)
+		if not found:
 			return k + 1
-	return -1
+	return 0
+
+def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
+	nV = P.shape[0]
+	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
+	s = z3.Solver()
+	for P_j in P.T:
+		s.add(z3.Or(*X[~P_j])) # pyright: ignore
+	for k in range(nV - 1, -1, -1):
+		s.push()
+		s.add(z3.AtLeast(*X, k)) # pyright: ignore
+		s.add(z3.AtMost(*X, k)) # pyright: ignore
+		found : bool = s.check() == z3.sat # pyright: ignore
+		if not found:
+			return k + 1
+		s.pop()
+	return 0
+
+def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
+	nV = P.shape[0]
+	X = np.array([z3.Int('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
+	s = z3.Solver()
+	for x in X:
+		s.add(x >= 0) # pyright: ignore
+		s.add(x <= 1) # pyright: ignore
+	for k in range(nV - 1, -1, -1):
+		s.push()
+		s.add(z3.Sum(*X) == k) # pyright: ignore
+		_P = P[:, P.sum(axis=0) >= k]
+		for _P_j in _P.T:
+			s.add(z3.Sum(*X[_P_j]) <= k - 1) # pyright: ignore
+		found : bool = s.check() == z3.sat # pyright: ignore
+		if not found:
+			return k + 1
+		s.pop()
+	return 0
+
+def find_pseudo_boolean(P : npt.NDArray[np.bool_]) -> int:
+	nV = P.shape[0]
+	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
+	X1 = np.array([(x, 1) for x in X])
+	s = z3.Solver()
+	for k in range(nV - 1, -1, -1):
+		s.push()
+		s.add(z3.PbEq(X1, k)) # pyright: ignore
+		_P = P[:, P.sum(axis=0) >= k]
+		for _P_j in _P.T:
+			s.add(z3.PbLe(X1[_P_j], k - 1)) # pyright: ignore
+		found : bool = s.check() == z3.sat # pyright: ignore
+		if not found:
+			return k + 1
+		s.pop()
+	return 0
