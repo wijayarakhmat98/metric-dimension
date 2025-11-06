@@ -37,9 +37,9 @@ class Timeout:
 			signal.signal(signal.SIGALRM, self._old_handler)
 		return False
 
-TIMEOUT = -1
-ERROR = -2
-UNSET = -3
+UNSET = -1
+TIMEOUT = -2
+ERROR = -3
 
 def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Optional[Dict[str, Any]]:
 	if not datum:
@@ -77,10 +77,8 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 			with timer() as k_time:
 					k = find(P)
 	except TimeoutException:
-		k = TIMEOUT
 		k_time = TIMEOUT
 	except:
-		k = ERROR
 		k_time = ERROR
 	match mode:
 		case 'metric-dimension':
