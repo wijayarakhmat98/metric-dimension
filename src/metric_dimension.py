@@ -131,7 +131,10 @@ def find_pseudo_boolean(P : npt.NDArray[np.bool_]) -> int:
 		s.add(z3.PbEq(X1, k)) # pyright: ignore
 		_P = P[:, P.sum(axis=0) >= k]
 		for _P_j in _P.T:
-			s.add(z3.PbLe(X1[_P_j], k - 1)) # pyright: ignore
+			if X1[_P_j].size == 0:
+				s.add(False) # pyright: ignore
+			else:
+				s.add(z3.PbLe(X1[_P_j], k - 1)) # pyright: ignore
 		found : bool = s.check() == z3.sat # pyright: ignore
 		if not found:
 			return k + 1
