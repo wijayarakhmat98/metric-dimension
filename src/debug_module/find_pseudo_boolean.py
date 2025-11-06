@@ -40,10 +40,10 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 			s.push()
 			s.add(z3.PbEq(X1, k)) # pyright: ignore
 			_P = P[:, P.sum(axis=0) >= k]
-			for _P_j in _P.T:
-				if X1[_P_j].size == 0:
-					s.add(False) # pyright: ignore
-				else:
+			if k == 0 and np.any(~np.any(_P, axis=0)):
+				s.add(False) # pyright: ignore
+			else:
+				for _P_j in _P.T:
 					s.add(z3.PbLe(X1[_P_j], k - 1)) # pyright: ignore
 			with timer_ms() as k_time:
 				found : bool = s.check() == z3.sat # pyright: ignore
