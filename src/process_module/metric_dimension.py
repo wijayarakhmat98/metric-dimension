@@ -1,7 +1,8 @@
 import json
 import metric_dimension
 import re
-from typing import Any, cast, Dict, Optional, Tuple
+import signal
+from typing import Any, cast, Dict, Optional, Tuple, Type
 from utils import timer
 
 preserve_order = False
@@ -14,10 +15,36 @@ def decode(result : str) -> Optional[Dict[str, Any]]:
 	except:
 		return None
 
+class TimeoutException(Exception):
+	pass
+
+class Timeout:
+	def __init__(self, seconds: float) -> None:
+		self.seconds = seconds
+		self._old_handler = None
+
+	def _handle_timeout(self, signum : int, frame : Any) -> None:
+		raise TimeoutException()
+
+	def __enter__(self) -> 'Timeout':
+		self._old_handler = signal.signal(signal.SIGALRM, self._handle_timeout)
+		signal.setitimer(signal.ITIMER_REAL, self.seconds)
+		return self
+
+	def __exit__(self, exc_type : Optional[Type[BaseException]], exc_value : Optional[BaseException], traceback : Any) -> bool:
+		signal.setitimer(signal.ITIMER_REAL, 0)
+		if self._old_handler is not None:
+			signal.signal(signal.SIGALRM, self._old_handler)
+		return False
+
+TIMEOUT = -1
+ERROR = -2
+UNSET = -3
+
 def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Optional[Dict[str, Any]]:
 	if not datum:
 		return None
-	mode, method = cast(Tuple[str, str], option)
+	mode, method, limit = cast(Tuple[str, str, float], option)
 	if mode not in ('metric-dimension', 'edge-metric-dimension'):
 		return None
 	if method not in ('brute-force', 'boolean-satisfiability', 'linear-integer-arithmetic', 'pseudo-boolean'):
@@ -43,7 +70,18 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 			find = metric_dimension.find_linear_integer_arithmetic
 		case 'pseudo-boolean':
 			find = metric_dimension.find_pseudo_boolean
-	with timer() as k_time: k = find(P)
+	k = UNSET
+	k_time = UNSET
+	try:
+		with Timeout(limit):
+			with timer() as k_time:
+					k = find(P)
+	except TimeoutException:
+		k = TIMEOUT
+		k_time = TIMEOUT
+	except:
+		k = ERROR
+		k_time = ERROR
 	match mode:
 		case 'metric-dimension':
 			datum['metric_dimension'] = k
@@ -61,11 +99,12 @@ def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
 
 option_spec = [
 	(['-f', '--find'], '', None),
-	(['-a', '--algorithm'], '', None)
+	(['-a', '--algorithm'], '', None),
+	(['--timeout'], 0, float)
 ]
 
 def option_valid(option : Tuple[Any, ...]) -> bool:
-	mode, method = cast(Tuple[str, str], option)
+	mode, method, _ = cast(Tuple[str, str, float], option)
 	if mode not in ('metric-dimension', 'edge-metric-dimension'):
 		return False
 	if method not in ('brute-force', 'boolean-satisfiability', 'linear-integer-arithmetic', 'pseudo-boolean'):
@@ -75,7 +114,7 @@ def option_valid(option : Tuple[Any, ...]) -> bool:
 option_augment = None
 
 def help() -> str:
-	return re.sub(r'\n\t\t\t', r'\n',
+	return re.sub(r'\n\t\t', r'\n',
 	'''
 		usage:
 			... <-f=<mode> -a=<method>>
@@ -90,5 +129,9 @@ def help() -> str:
 				boolean-satisfiability
 				linear-integer-arithmetic
 				pseudo-boolean
+
+			--timeout=<seconds>
+				Stop search when over the specified amount of time.
+				Defaults to 0, meaning no limit.
 	'''
 	).strip()
