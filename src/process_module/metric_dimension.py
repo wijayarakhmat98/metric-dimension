@@ -2,7 +2,7 @@ import json
 import metric_dimension
 import re
 import signal
-from typing import Any, cast, Dict, Optional, Tuple, Type
+from typing import Any, cast, Dict, Literal, Optional, Tuple, Type, Union
 from utils import timer
 
 preserve_order = False
@@ -21,7 +21,7 @@ class TimeoutException(Exception):
 class Timeout:
 	def __init__(self, seconds: float) -> None:
 		self.seconds = seconds
-		self._old_handler = None
+		self._old_handler : Any = None
 
 	def _handle_timeout(self, signum : int, frame : Any) -> None:
 		raise TimeoutException()
@@ -31,7 +31,7 @@ class Timeout:
 		signal.setitimer(signal.ITIMER_REAL, self.seconds)
 		return self
 
-	def __exit__(self, exc_type : Optional[Type[BaseException]], exc_value : Optional[BaseException], traceback : Any) -> bool:
+	def __exit__(self, exc_type : Optional[Type[BaseException]], exc_value : Optional[BaseException], traceback : Any) -> Literal[False]:
 		signal.setitimer(signal.ITIMER_REAL, 0)
 		if self._old_handler is not None:
 			signal.signal(signal.SIGALRM, self._old_handler)
@@ -71,7 +71,7 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 		case 'pseudo-boolean':
 			find = metric_dimension.find_pseudo_boolean
 	k = UNSET
-	k_time = UNSET
+	k_time : Union[int, timer] = UNSET
 	try:
 		with Timeout(limit):
 			with timer() as k_time:
