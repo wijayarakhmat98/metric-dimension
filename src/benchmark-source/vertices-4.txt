@@ -1,0 +1,6 @@
+{"graph": "CF"}
+{"graph": "CU"}
+{"graph": "CV"}
+{"graph": "C]"}
+{"graph": "C^"}
+{"graph": "C~"}
