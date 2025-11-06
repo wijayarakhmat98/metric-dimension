@@ -39,7 +39,7 @@ def option_valid(option : Tuple[Any, ...]) -> bool:
 option_augment = None
 
 def help() -> str:
-	return re.sub(r'\n\t\t\t', r'\n',
+	return re.sub(r'\n\t\t', r'\n',
 	'''
 		usage:
 			... <-r=<pattern>>
