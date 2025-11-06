@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+VERTICES_START=2
+VERTICES_END=9
+
+export THREADS=1
+REPEAT=3
+TIMEOUT=600
+INPUT='benchmark-source'
+OUTPUT='benchmark-result'
+
+MODE=''
+MODE="${MODE} metric-dimension"
+MODE="${MODE} edge-metric-dimension"
+
+METHOD=''
+METHOD="${METHOD} brute-force"
+METHOD="${METHOD} boolean-satisfiability"
+METHOD="${METHOD} linear-integer-arithmetic"
+METHOD="${METHOD} pseudo-boolean"
+
+mkdir -p "${OUTPUT}"
+
+for ((i = 1; i <= ${REPEAT}; ++i)); do
+	for ((nV = ${VERTICES_START}; nV <= ${VERTICES_END}; ++nV)); do
+		for mode in ${MODE}; do
+			for method in ${METHOD}; do
+				source="${INPUT}/vertices-${nV}.txt"
+				target="${OUTPUT}/vertices-${nV}_${mode}_${method}_${i}.txt"
+				echo -e "[REPEAT ${i}]\t[VERTICES ${nV}]\t[FIND ${mode}] \t[ALGORITHM ${method}]"
+				cat "${source}" | ./process metric_dimension --find="${mode}" --algorithm="${method}" --timeout="${TIMEOUT}" > "${target}"
+			done
+		done
+	done
+done
