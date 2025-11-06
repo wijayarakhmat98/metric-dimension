@@ -1,4 +1,7 @@
+import itertools
 import metric_dimension
+import numpy as np
+import numpy.typing as npt
 from typing import Any, Tuple
 from utils import timer
 
@@ -30,13 +33,14 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	with timer_ms() as total_time:
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
-			with timer_ms() as k_time: found = metric_dimension.find_exact_bruteforce(P, k)
+			with timer_ms() as k_time:
+				found = find_exact(P, k)
 			print(k_time)
 			if not found:
 				k = k + 1
 				break
 		else:
-			k = -1
+			k = 0
 	print('Metric dimension: {}'.format(k))
 	print('Metric dimension time: {}'.format(total_time))
 	print()
@@ -46,3 +50,15 @@ option_valid = None
 
 def help() -> str:
 	return ''
+
+def find_exact(P : npt.NDArray[np.bool_], k : int) -> bool:
+	nV = P.shape[0]
+	_P = P[:, P.sum(axis=0) >= k]
+	combinations = itertools.combinations(range(nV), k)
+	for indices in combinations:
+		W = np.zeros((nV, 1), dtype=np.bool_)
+		W[indices, 0] = True
+		is_subset = np.all((W | _P) == _P, axis=0)
+		if not np.any(is_subset):
+			return True
+	return False

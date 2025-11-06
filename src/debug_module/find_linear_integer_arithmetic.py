@@ -30,13 +30,10 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print()
 
 	X = np.array([z3.Int('x{}'.format(v + 1)) for v in V]) # pyright: ignore
-	COL = P.shape[1]
 	s = z3.Solver()
 	for x in X:
 		s.add(x >= 0) # pyright: ignore
 		s.add(x <= 1) # pyright: ignore
-	for i in range(COL):
-		s.add(z3.Sum(*X[~P[:, i]]) >= 1) # pyright: ignore
 
 	print('Metric dimension...')
 	with timer_ms() as total_time:
@@ -44,6 +41,9 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			s.push()
 			s.add(z3.Sum(*X) == k) # pyright: ignore
+			_P = P[:, P.sum(axis=0) >= k]
+			for _P_j in _P.T:
+				s.add(z3.Sum(*X[_P_j]) <= k - 1) # pyright: ignore
 			with timer_ms() as k_time:
 				found : bool = s.check() == z3.sat # pyright: ignore
 			print(k_time)
@@ -52,7 +52,7 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 				break
 			s.pop()
 		else:
-			k = -1
+			k = 0
 	print('Metric dimension: {}'.format(k))
 	print('Metric dimension time: {}'.format(total_time))
 	print()
