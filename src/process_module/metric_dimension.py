@@ -104,7 +104,7 @@ def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',
 	'''
 		usage:
-			... <-f=<mode> -a=<method>>
+			... -a=<method>>
 
 		options:
 			-f=<mode>, --find=<mode>

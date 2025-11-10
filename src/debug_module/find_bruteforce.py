@@ -2,7 +2,8 @@ import itertools
 import metric_dimension
 import numpy as np
 import numpy.typing as npt
-from typing import Any, Tuple
+import re
+from typing import Any, cast, Tuple
 from utils import timer
 
 class timer_ms(timer):
@@ -10,6 +11,10 @@ class timer_ms(timer):
 		return '{}ms'.format(round(1000 * float(self), 3))
 
 def debug(graph : str, option : Tuple[Any, ...]) -> None:
+	mode, = cast(Tuple[str], option)
+	if mode not in ('metric-dimension', 'edge-metric-dimension'):
+		return None
+
 	M = metric_dimension.graph6_decode(graph)
 	nV = M.shape[0]
 	print('Graph: {}'.format(graph))
@@ -17,7 +22,13 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print()
 
 	DV = metric_dimension.distance_matrix(M)
-	D = DV
+	match mode:
+		case 'metric-dimension':
+			D = DV
+		case 'edge-metric-dimension':
+			E = metric_dimension.edges(M)
+			DE = metric_dimension.edge_distance_matrix(E, DV)
+			D = DE
 
 	print('Distance similarity...')
 	with timer_ms() as B_time: B = metric_dimension.distance_similarity(D)
@@ -45,11 +56,26 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Metric dimension time: {}'.format(total_time))
 	print()
 
-option_spec = None
-option_valid = None
+option_spec = [
+	(['-f', '--find'], 'metric-dimension', None)
+]
+
+def option_valid(option : Tuple[Any, ...]) -> bool:
+	mode, = cast(Tuple[str], option)
+	if mode not in ('metric-dimension', 'edge-metric-dimension'):
+		return False
+	return True
 
 def help() -> str:
-	return ''
+	return re.sub(r'\n\t\t', r'\n',
+	'''
+		options:
+			-f=<mode>, --find=<mode>
+				metric-dimension
+				edge-metric-dimension
+				Defaults to metric-dimension.
+	'''
+	).strip()
 
 def find_exact(P : npt.NDArray[np.bool_], k : int) -> bool:
 	nV = P.shape[0]
