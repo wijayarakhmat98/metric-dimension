@@ -5,7 +5,7 @@ set -euo pipefail
 VERTICES_START=2
 VERTICES_END=50
 
-TIMEOUT=180
+export TIMEOUT=180
 INPUT='benchmark-source'
 OUTPUT='benchmark-result'
 
@@ -27,7 +27,7 @@ for ((nV = ${VERTICES_START}; nV <= ${VERTICES_END}; ++nV)); do
 			source="${INPUT}/vertices-${nV}.txt"
 			target="${OUTPUT}/vertices-${nV}_${mode}_${method}.txt"
 			echo -e "[VERTICES ${nV}]\t[FIND ${mode}] \t[ALGORITHM ${method}]"
-			./process metric_dimension --find="${mode}" --algorithm="${method}" --timeout="${TIMEOUT}" < "${source}" > "${target}"
+			./process metric_dimension --find="${mode}" --algorithm="${method}" < "${source}" > "${target}"
 		done
 	done
 done
