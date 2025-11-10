@@ -31,8 +31,9 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 
 	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in V]) # pyright: ignore
 	s = z3.Solver()
+	s.add(z3.Or(*X)) # pyright: ignore
 	for P_j in P.T:
-		s.add(z3.Or(*X[~P_j])) # pyright: ignore
+		s.add(z3.Implies(z3.Or(*X[P_j]), z3.Or(*X[~P_j]))) # pyright: ignore
 
 	print('Metric dimension...')
 	with timer_ms() as total_time:

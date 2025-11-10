@@ -90,8 +90,9 @@ def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
 	nV = P.shape[0]
 	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
 	s = z3.Solver()
+	s.add(z3.Or(*X)) # pyright: ignore
 	for P_j in P.T:
-		s.add(z3.Or(*X[~P_j])) # pyright: ignore
+		s.add(z3.Implies(z3.Or(*X[P_j]), z3.Or(*X[~P_j]))) # pyright: ignore
 	for k in range(nV - 1, -1, -1):
 		s.push()
 		s.add(z3.AtLeast(*X, k)) # pyright: ignore
