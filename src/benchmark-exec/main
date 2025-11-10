@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+export TIMEOUT=300
+export INPUT='benchmark-source'
+export OUTPUT='benchmark-result'
+
+mkdir -p "${OUTPUT}"
+
+# for ((i = 1; i <= 5; ++i)); do
+# 	echo "Initialization ${i}... Saturating CPU..."
+# 	nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
+# done
+
+for vertices in $VERTICES; do
+	# echo "[VERTICES ${vertices}] Saturating CPU..."
+	# nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
+	for mode in ${MODE}; do
+		for method in ${METHOD}; do
+			source="${INPUT}/vertices-${vertices}.txt"
+			target="${OUTPUT}/vertices-${vertices}.${mode}.${method}.txt"
+			echo -e "[VERTICES ${vertices}]\t[FIND ${mode}] \t[ALGORITHM ${method}]"
+			./process metric_dimension --find="${mode}" --algorithm="${method}" < "${source}" > "${target}"
+		done
+	done
+done

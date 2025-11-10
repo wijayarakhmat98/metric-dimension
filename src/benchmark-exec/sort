@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+export OUTPUT='benchmark-result'
+
+mkdir -p "${OUTPUT}"
+
+for source in benchmark-result/*; do
+	file="${source%%.txt}"
+	target="${file}.sort"
+	echo "Sorting ${file}..."
+	./sort < "${source}" > "${target}"
+done
