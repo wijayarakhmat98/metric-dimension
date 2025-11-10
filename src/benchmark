@@ -27,7 +27,7 @@ for ((nV = ${VERTICES_START}; nV <= ${VERTICES_END}; ++nV)); do
 			source="${INPUT}/vertices-${nV}.txt"
 			target="${OUTPUT}/vertices-${nV}_${mode}_${method}.txt"
 			echo -e "[VERTICES ${nV}]\t[FIND ${mode}] \t[ALGORITHM ${method}]"
-			cat "${source}" | ./process metric_dimension --find="${mode}" --algorithm="${method}" --timeout="${TIMEOUT}" > "${target}"
+			./process metric_dimension --find="${mode}" --algorithm="${method}" --timeout="${TIMEOUT}" < "${source}" > "${target}"
 		done
 	done
 done
