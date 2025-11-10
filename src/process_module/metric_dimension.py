@@ -53,7 +53,7 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 	try:
 		with timeout(limit):
 			with timer() as k_time:
-					k = find(P)
+				k = find(P)
 	except timeout_exception:
 		k_time = TIMEOUT
 	except:
