@@ -1,5 +1,6 @@
 import json
 import metric_dimension
+import os
 import re
 from typing import Any, cast, Dict, Optional, Tuple, Union
 from utils import timer, timeout, timeout_exception
@@ -75,7 +76,7 @@ def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
 option_spec = [
 	(['-f', '--find'], 'metric-dimension', None),
 	(['-a', '--algorithm'], '', None),
-	(['--timeout'], 0, float)
+	(['--timeout'], -1, float)
 ]
 
 def option_valid(option : Tuple[Any, ...]) -> bool:
@@ -86,7 +87,18 @@ def option_valid(option : Tuple[Any, ...]) -> bool:
 		return False
 	return True
 
-option_augment = None
+def option_augment(option : Tuple[Any, ...]) -> Tuple[Any, ...]:
+	mode, method, limit = cast(Tuple[str, str, float], option)
+	if limit < 0:
+		if 'TIMEOUT' in os.environ:
+			try:
+				limit = float(os.environ['TIMEOUT'])
+			except:
+				pass
+		if limit < 0:
+			limit = 0
+	option = (mode, method, limit)
+	return option
 
 def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',
