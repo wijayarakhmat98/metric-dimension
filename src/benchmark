@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-VERTICES_START=2
+VERTICES_START=1
 VERTICES_END=50
 
 export TIMEOUT=180
