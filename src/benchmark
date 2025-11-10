@@ -5,8 +5,6 @@ set -euo pipefail
 VERTICES_START=2
 VERTICES_END=50
 
-export THREADS=1
-REPEAT=3
 TIMEOUT=180
 INPUT='benchmark-source'
 OUTPUT='benchmark-result'
@@ -23,15 +21,13 @@ METHOD="${METHOD} pseudo-boolean"
 
 mkdir -p "${OUTPUT}"
 
-for ((i = 1; i <= ${REPEAT}; ++i)); do
-	for ((nV = ${VERTICES_START}; nV <= ${VERTICES_END}; ++nV)); do
-		for mode in ${MODE}; do
-			for method in ${METHOD}; do
-				source="${INPUT}/vertices-${nV}.txt"
-				target="${OUTPUT}/vertices-${nV}_${mode}_${method}_${i}.txt"
-				echo -e "[REPEAT ${i}]\t[VERTICES ${nV}]\t[FIND ${mode}] \t[ALGORITHM ${method}]"
-				cat "${source}" | ./process metric_dimension --find="${mode}" --algorithm="${method}" --timeout="${TIMEOUT}" > "${target}"
-			done
+for ((nV = ${VERTICES_START}; nV <= ${VERTICES_END}; ++nV)); do
+	for mode in ${MODE}; do
+		for method in ${METHOD}; do
+			source="${INPUT}/vertices-${nV}.txt"
+			target="${OUTPUT}/vertices-${nV}_${mode}_${method}.txt"
+			echo -e "[VERTICES ${nV}]\t[FIND ${mode}] \t[ALGORITHM ${method}]"
+			cat "${source}" | ./process metric_dimension --find="${mode}" --algorithm="${method}" --timeout="${TIMEOUT}" > "${target}"
 		done
 	done
 done
