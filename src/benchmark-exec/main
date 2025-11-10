@@ -5,17 +5,18 @@ set -euo pipefail
 export TIMEOUT=300
 export INPUT='benchmark-source'
 export OUTPUT='benchmark-result'
+export SATURATION=5
 
 mkdir -p "${OUTPUT}"
 
-# for ((i = 1; i <= 5; ++i)); do
-# 	echo "Initialization ${i}... Saturating CPU..."
-# 	nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
-# done
+for ((i = 1; i <= $SATURATION; ++i)); do
+	echo "Initial ${i} of ${SATURATION}... Saturating CPU..."
+	nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
+done
 
 for vertices in $VERTICES; do
-	# echo "[VERTICES ${vertices}] Saturating CPU..."
-	# nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
+	echo "[VERTICES ${vertices}] Saturating CPU..."
+	nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
 	for mode in ${MODE}; do
 		for method in ${METHOD}; do
 			source="${INPUT}/vertices-${vertices}.txt"
