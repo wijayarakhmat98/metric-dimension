@@ -14,10 +14,10 @@ MODE="${MODE} metric-dimension"
 MODE="${MODE} edge-metric-dimension"
 
 METHOD=''
-METHOD="${METHOD} brute-force"
-METHOD="${METHOD} boolean-satisfiability"
-METHOD="${METHOD} linear-integer-arithmetic"
-METHOD="${METHOD} pseudo-boolean"
+METHOD="${METHOD} bruteforce"
+METHOD="${METHOD} boolean_satisfiability"
+METHOD="${METHOD} linear_integer_arithmetic"
+METHOD="${METHOD} pseudo_boolean"
 
 mkdir -p "${OUTPUT}"
 

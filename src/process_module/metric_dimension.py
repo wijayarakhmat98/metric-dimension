@@ -25,7 +25,7 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 	mode, method, limit = cast(Tuple[str, str, float], option)
 	if mode not in ('metric-dimension', 'edge-metric-dimension'):
 		return None
-	if method not in ('brute-force', 'boolean-satisfiability', 'linear-integer-arithmetic', 'pseudo-boolean'):
+	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
 		return None
 	s = datum['graph']
 	M = metric_dimension.graph6_decode(s)
@@ -40,13 +40,13 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 	B = metric_dimension.distance_similarity(D)
 	P = metric_dimension.reduced_distance_similarity(B)
 	match method:
-		case 'brute-force':
+		case 'bruteforce':
 			find = metric_dimension.find_bruteforce
-		case 'boolean-satisfiability':
+		case 'boolean_satisfiability':
 			find = metric_dimension.find_boolean_satisfiability
-		case 'linear-integer-arithmetic':
+		case 'linear_integer_arithmetic':
 			find = metric_dimension.find_linear_integer_arithmetic
-		case 'pseudo-boolean':
+		case 'pseudo_boolean':
 			find = metric_dimension.find_pseudo_boolean
 	k = UNSET
 	k_time : Union[int, timer] = UNSET
@@ -83,7 +83,7 @@ def option_valid(option : Tuple[Any, ...]) -> bool:
 	mode, method, _ = cast(Tuple[str, str, float], option)
 	if mode not in ('metric-dimension', 'edge-metric-dimension'):
 		return False
-	if method not in ('brute-force', 'boolean-satisfiability', 'linear-integer-arithmetic', 'pseudo-boolean'):
+	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
 		return False
 	return True
 
@@ -113,10 +113,10 @@ def help() -> str:
 				Defaults to metric-dimension.
 
 			-a=<method>, --algorithm=<method>
-				brute-force
-				boolean-satisfiability
-				linear-integer-arithmetic
-				pseudo-boolean
+				bruteforce
+				boolean_satisfiability
+				linear_integer_arithmetic
+				pseudo_boolean
 
 			--timeout=<seconds>
 				Stop search when over the specified amount of time.
