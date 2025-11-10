@@ -1,9 +1,8 @@
 import json
 import metric_dimension
 import re
-import signal
-from typing import Any, cast, Dict, Literal, Optional, Tuple, Type, Union
-from utils import timer
+from typing import Any, cast, Dict, Optional, Tuple, Union
+from utils import timer, timeout, timeout_exception
 
 preserve_order = False
 header = None
@@ -14,28 +13,6 @@ def decode(result : str) -> Optional[Dict[str, Any]]:
 		return datum
 	except:
 		return None
-
-class TimeoutException(Exception):
-	pass
-
-class Timeout:
-	def __init__(self, seconds: float) -> None:
-		self.seconds = seconds
-		self._old_handler : Any = None
-
-	def _handle_timeout(self, signum : int, frame : Any) -> None:
-		raise TimeoutException()
-
-	def __enter__(self) -> 'Timeout':
-		self._old_handler = signal.signal(signal.SIGALRM, self._handle_timeout)
-		signal.setitimer(signal.ITIMER_REAL, self.seconds)
-		return self
-
-	def __exit__(self, exc_type : Optional[Type[BaseException]], exc_value : Optional[BaseException], traceback : Any) -> Literal[False]:
-		signal.setitimer(signal.ITIMER_REAL, 0)
-		if self._old_handler is not None:
-			signal.signal(signal.SIGALRM, self._old_handler)
-		return False
 
 UNSET = -1
 TIMEOUT = -2
@@ -73,10 +50,10 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 	k = UNSET
 	k_time : Union[int, timer] = UNSET
 	try:
-		with Timeout(limit):
+		with timeout(limit):
 			with timer() as k_time:
 					k = find(P)
-	except TimeoutException:
+	except timeout_exception:
 		k_time = TIMEOUT
 	except:
 		k_time = ERROR
