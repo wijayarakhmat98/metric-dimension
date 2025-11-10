@@ -96,7 +96,7 @@ def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
 	return result
 
 option_spec = [
-	(['-f', '--find'], '', None),
+	(['-f', '--find'], 'metric-dimension', None),
 	(['-a', '--algorithm'], '', None),
 	(['--timeout'], 0, float)
 ]
@@ -121,6 +121,7 @@ def help() -> str:
 			-f=<mode>, --find=<mode>
 				metric-dimension
 				edge-metric-dimension
+				Defaults to metric-dimension.
 
 			-a=<method>, --algorithm=<method>
 				brute-force
