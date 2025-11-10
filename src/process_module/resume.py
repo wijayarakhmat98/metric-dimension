@@ -45,13 +45,14 @@ def option_valid(option : Tuple[Any, ...]) -> bool:
 
 def option_augment(option : Tuple[Any, ...]) -> Tuple[Any, ...]:
 	log_filename, number_of_threads = cast(Tuple[Path, int], option)
-	if number_of_threads < 0:
-		number_of_threads = os.cpu_count() or 1
+	if number_of_threads <= 0:
 		if 'THREADS' in os.environ:
 			try:
 				number_of_threads = int(os.environ['THREADS'])
 			except:
 				pass
+		if number_of_threads <= 0:
+			number_of_threads = os.cpu_count() or 1
 	with open(log_filename, 'r') as log_file:
 		log_read = read_file(log_file)
 		with multiprocessing.Pool(processes=number_of_threads) as pool:
