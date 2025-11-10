@@ -21,7 +21,14 @@ METHOD="${METHOD} pseudo_boolean"
 
 mkdir -p "${OUTPUT}"
 
+for ((i = 1; i <= 5; ++i)); do
+	echo "Initialization ${i}... Saturating CPU..."
+	nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
+done
+
 for ((nV = ${VERTICES_START}; nV <= ${VERTICES_END}; ++nV)); do
+	echo "[VERTICES ${nV}] Saturating CPU..."
+	nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
 	for mode in ${MODE}; do
 		for method in ${METHOD}; do
 			source="${INPUT}/vertices-${nV}.txt"
