@@ -37,14 +37,13 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Reduced distance similarity time: {}'.format(P_time))
 	print()
 
-	config = metric_dimension.find_config_bruteforce(P)
-
 	print('Metric dimension...')
 	with timer_ms() as total_time:
+		find : metric_dimension.find_class = metric_dimension.find_class_bruteforce(P)
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			with timer_ms() as k_time:
-				found = metric_dimension.find_exact_bruteforce(config, k)
+				found = find.exact(k)
 			print(k_time)
 			if not found:
 				k = k + 1

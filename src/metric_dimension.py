@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import itertools
 import networkx as nx
 import numpy as np
@@ -66,11 +67,6 @@ def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.boo
 	P = P[:, keep]
 	return P
 
-def find_config_bruteforce(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
-	nV : int = P.shape[0]
-	config = (P, nV)
-	return config
-
 def find_config_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
 	nV : int = P.shape[0]
 	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
@@ -96,18 +92,6 @@ def find_config_pseudo_boolean(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
 	s = z3.Solver()
 	config = (P, nV, X, X1, s)
 	return config
-
-def find_exact_bruteforce(config : Tuple[Any, ...], k : int) -> bool:
-	P, nV = cast(Tuple[npt.NDArray[np.bool_], int], config)
-	_P = P[:, P.sum(axis=0) >= k]
-	combinations = itertools.combinations(range(nV), k)
-	for indices in combinations:
-		W = np.zeros((nV, 1), dtype=np.bool_)
-		W[indices, 0] = True
-		is_subset = np.all((W | _P) == _P, axis=0)
-		if not np.any(is_subset):
-			return True
-	return False
 
 def find_exact_boolean_satisfiability(config : Tuple[Any, ...], k : int) -> bool:
 	_, _, X, s = cast(Tuple[Any, Any, npt.NDArray[np.object_], z3.Solver], config)
@@ -146,13 +130,8 @@ def find_exact_pseudo_boolean(config : Tuple[Any, ...], k : int) -> bool:
 	return found
 
 def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
-	config = find_config_bruteforce(P)
-	_, nV, *_ = cast(Tuple[Any, int], config)
-	for k in range(nV - 1, -1, -1):
-		found = find_exact_bruteforce(config, k)
-		if not found:
-			return k + 1
-	return 0
+	find : find_class = find_class_bruteforce(P)
+	return find.minimum()
 
 def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
 	config = find_config_boolean_satisfiability(P)
@@ -180,3 +159,37 @@ def find_pseudo_boolean(P : npt.NDArray[np.bool_]) -> int:
 		if not found:
 			return k + 1
 	return 0
+
+class find_class(ABC):
+	P : npt.NDArray[np.bool_]
+	nV : int
+
+	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
+		self.P = P
+		self.nV = P.shape[0]
+
+	@abstractmethod
+	def exact(self, k : int) -> bool:
+		pass
+
+	def minimum(self) -> int:
+		for k in range(self.nV - 1, -1, -1):
+			found = self.exact(k)
+			if not found:
+				return k + 1
+		return 0
+
+class find_class_bruteforce(find_class):
+	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
+		super().__init__(P)
+
+	def exact(self, k : int) -> bool:
+		_P = self.P[:, self.P.sum(axis=0) >= k]
+		combinations = itertools.combinations(range(self.nV), k)
+		for indices in combinations:
+			W = np.zeros((self.nV, 1), dtype=np.bool_)
+			W[indices, 0] = True
+			is_subset = np.all((W | _P) == _P, axis=0)
+			if not np.any(is_subset):
+				return True
+		return False
