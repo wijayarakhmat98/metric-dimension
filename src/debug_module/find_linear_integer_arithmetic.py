@@ -1,9 +1,7 @@
 import metric_dimension
-import numpy as np
 import re
 from typing import Any, cast, Tuple
 from utils import timer
-import z3 # type: ignore
 
 class timer_ms(timer):
 	def __str__(self) -> str:
@@ -40,22 +38,12 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Reduced distance similarity time: {}'.format(P_time))
 	print()
 
-	X = np.array([z3.Int('x{}'.format(v + 1)) for v in V]) # pyright: ignore
-
 	print('Metric dimension...')
 	with timer_ms() as total_time:
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
-			s = z3.Solver()
-			for x in X:
-				s.add(x >= 0) # pyright: ignore
-				s.add(x <= 1) # pyright: ignore
-			s.add(z3.Sum(*X) == k) # pyright: ignore
-			_P = P[:, P.sum(axis=0) >= k]
-			for _P_j in _P.T:
-				s.add(z3.Sum(*X[_P_j]) <= k - 1) # pyright: ignore
 			with timer_ms() as k_time:
-				found : bool = s.check() == z3.sat # pyright: ignore
+				found = metric_dimension.find_exact_linear_integer_arithmetic(P, k)
 			print(k_time)
 			if not found:
 				k = k + 1

@@ -66,7 +66,7 @@ def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.boo
 	P = P[:, keep]
 	return P
 
-def find_bruteforce_exact(P : npt.NDArray[np.bool_], k : int) -> bool:
+def find_exact_bruteforce(P : npt.NDArray[np.bool_], k : int) -> bool:
 	nV = P.shape[0]
 	_P = P[:, P.sum(axis=0) >= k]
 	combinations = itertools.combinations(range(nV), k)
@@ -78,10 +78,24 @@ def find_bruteforce_exact(P : npt.NDArray[np.bool_], k : int) -> bool:
 			return True
 	return False
 
+def find_exact_linear_integer_arithmetic(P : npt.NDArray[np.bool_], k : int) -> bool:
+	nV = P.shape[0]
+	X = np.array([z3.Int('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
+	s = z3.Solver()
+	for x in X:
+		s.add(x >= 0) # pyright: ignore
+		s.add(x <= 1) # pyright: ignore
+	s.add(z3.Sum(*X) == k) # pyright: ignore
+	_P = P[:, P.sum(axis=0) >= k]
+	for _P_j in _P.T:
+		s.add(z3.Sum(*X[_P_j]) <= k - 1) # pyright: ignore
+	found = cast(bool, s.check() == z3.sat) # pyright: ignore
+	return found
+
 def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
 	nV = P.shape[0]
 	for k in range(nV - 1, -1, -1):
-		found = find_bruteforce_exact(P, k)
+		found = find_exact_bruteforce(P, k)
 		if not found:
 			return k + 1
 	return 0
@@ -106,17 +120,8 @@ def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
 
 def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
 	nV = P.shape[0]
-	X = np.array([z3.Int('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
 	for k in range(nV - 1, -1, -1):
-		s = z3.Solver()
-		for x in X:
-			s.add(x >= 0) # pyright: ignore
-			s.add(x <= 1) # pyright: ignore
-		s.add(z3.Sum(*X) == k) # pyright: ignore
-		_P = P[:, P.sum(axis=0) >= k]
-		for _P_j in _P.T:
-			s.add(z3.Sum(*X[_P_j]) <= k - 1) # pyright: ignore
-		found : bool = s.check() == z3.sat # pyright: ignore
+		found = find_exact_linear_integer_arithmetic(P, k)
 		if not found:
 			return k + 1
 	return 0
