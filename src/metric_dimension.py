@@ -67,12 +67,6 @@ def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.boo
 	P = P[:, keep]
 	return P
 
-def find_config_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
-	nV : int = P.shape[0]
-	X : npt.NDArray[np.object_] = np.array([z3.Int('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
-	config = (P, nV, X)
-	return config
-
 def find_config_pseudo_boolean(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
 	nV : int = P.shape[0]
 	nV = P.shape[0]
@@ -81,19 +75,6 @@ def find_config_pseudo_boolean(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
 	s = z3.Solver()
 	config = (P, nV, X, X1, s)
 	return config
-
-def find_exact_linear_integer_arithmetic(config : Tuple[Any, ...], k : int) -> bool:
-	P, _, X = cast(Tuple[npt.NDArray[np.bool_], Any, npt.NDArray[np.object_]], config)
-	s = z3.Solver()
-	for x in X:
-		s.add(x >= 0) # pyright: ignore
-		s.add(x <= 1) # pyright: ignore
-	s.add(z3.Sum(*X) == k) # pyright: ignore
-	_P = P[:, P.sum(axis=0) >= k]
-	for _P_j in _P.T:
-		s.add(z3.Sum(*X[_P_j]) <= k - 1) # pyright: ignore
-	found = cast(bool, s.check() == z3.sat) # pyright: ignore
-	return found
 
 def find_exact_pseudo_boolean(config : Tuple[Any, ...], k : int) -> bool:
 	P, _, _, X1, s = cast(Tuple[npt.NDArray[np.bool_], Any, Any, npt.NDArray[np.object_], z3.Solver], config)
@@ -118,13 +99,8 @@ def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
 	return find.minimum()
 
 def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
-	config = find_config_linear_integer_arithmetic(P)
-	_, nV, *_ = cast(Tuple[Any, int], config)
-	for k in range(nV - 1, -1, -1):
-		found = find_exact_linear_integer_arithmetic(config, k)
-		if not found:
-			return k + 1
-	return 0
+	find : find_class = find_class_linear_integer_arithmetic(P)
+	return find.minimum()
 
 def find_pseudo_boolean(P : npt.NDArray[np.bool_]) -> int:
 	config = find_config_pseudo_boolean(P)
@@ -188,4 +164,23 @@ class find_class_boolean_satisfiability(find_class):
 		self.s.add(z3.AtMost(*self.X, k)) # pyright: ignore
 		found = cast(bool, self.s.check() == z3.sat) # pyright: ignore
 		self.s.pop()
+		return found
+
+class find_class_linear_integer_arithmetic(find_class):
+	X : npt.NDArray[np.object_]
+
+	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
+		super().__init__(P)
+		self.X = np.array([z3.Int('x{}'.format(v + 1)) for v in range(self.nV)]) # pyright: ignore
+
+	def exact(self, k : int) -> bool:
+		s = z3.Solver()
+		for x in self.X:
+			s.add(x >= 0) # pyright: ignore
+			s.add(x <= 1) # pyright: ignore
+		s.add(z3.Sum(*self.X) == k) # pyright: ignore
+		_P = self.P[:, self.P.sum(axis=0) >= k]
+		for _P_j in _P.T:
+			s.add(z3.Sum(*self.X[_P_j]) <= k - 1) # pyright: ignore
+		found = cast(bool, s.check() == z3.sat) # pyright: ignore
 		return found

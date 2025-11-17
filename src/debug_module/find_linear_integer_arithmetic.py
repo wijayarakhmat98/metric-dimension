@@ -13,8 +13,7 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 		return None
 
 	M = metric_dimension.graph6_decode(graph)
-	V = metric_dimension.vertices(M)
-	nV = len(V)
+	nV = M.shape[0]
 	print('Graph: {}'.format(graph))
 	print('Vertices: {}'.format(nV))
 	print()
@@ -38,14 +37,13 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Reduced distance similarity time: {}'.format(P_time))
 	print()
 
-	config = metric_dimension.find_config_linear_integer_arithmetic(P)
-
 	print('Metric dimension...')
 	with timer_ms() as total_time:
+		find : metric_dimension.find_class = metric_dimension.find_class_linear_integer_arithmetic(P)
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			with timer_ms() as k_time:
-				found = metric_dimension.find_exact_linear_integer_arithmetic(config, k)
+				found = find.exact(k)
 			print(k_time)
 			if not found:
 				k = k + 1
