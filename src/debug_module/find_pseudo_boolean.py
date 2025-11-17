@@ -1,9 +1,7 @@
 import metric_dimension
-import numpy as np
 import re
 from typing import Any, cast, Tuple
 from utils import timer
-import z3 # type: ignore
 
 class timer_ms(timer):
 	def __str__(self) -> str:
@@ -40,29 +38,18 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Reduced distance similarity time: {}'.format(P_time))
 	print()
 
-	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in V]) # pyright: ignore
-	X1 = np.array([(x, 1) for x in X])
-	s = z3.Solver()
+	config = metric_dimension.find_config_pseudo_boolean(P)
 
 	print('Metric dimension...')
 	with timer_ms() as total_time:
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
-			s.push()
-			s.add(z3.PbEq(X1, k)) # pyright: ignore
-			_P = P[:, P.sum(axis=0) >= k]
-			if k == 0 and np.any(~np.any(_P, axis=0)):
-				s.add(False) # pyright: ignore
-			else:
-				for _P_j in _P.T:
-					s.add(z3.PbLe(X1[_P_j], k - 1)) # pyright: ignore
 			with timer_ms() as k_time:
-				found : bool = s.check() == z3.sat # pyright: ignore
+				found = metric_dimension.find_exact_pseudo_boolean(config, k)
 			print(k_time)
 			if not found:
 				k = k + 1
 				break
-			s.pop()
 		else:
 			k = 0
 	print('Metric dimension: {}'.format(k))

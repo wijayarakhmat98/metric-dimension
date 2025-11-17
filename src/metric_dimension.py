@@ -88,6 +88,15 @@ def find_config_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> Tuple[An
 	config = (P, nV, X)
 	return config
 
+def find_config_pseudo_boolean(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
+	nV : int = P.shape[0]
+	nV = P.shape[0]
+	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
+	X1 = np.array([(x, 1) for x in X])
+	s = z3.Solver()
+	config = (P, nV, X, X1, s)
+	return config
+
 def find_exact_bruteforce(config : Tuple[Any, ...], k : int) -> bool:
 	P, nV = cast(Tuple[npt.NDArray[np.bool_], int], config)
 	_P = P[:, P.sum(axis=0) >= k]
@@ -122,6 +131,20 @@ def find_exact_linear_integer_arithmetic(config : Tuple[Any, ...], k : int) -> b
 	found = cast(bool, s.check() == z3.sat) # pyright: ignore
 	return found
 
+def find_exact_pseudo_boolean(config : Tuple[Any, ...], k : int) -> bool:
+	P, _, _, X1, s = cast(Tuple[npt.NDArray[np.bool_], Any, Any, npt.NDArray[np.object_], z3.Solver], config)
+	s.push()
+	s.add(z3.PbEq(X1, k)) # pyright: ignore
+	_P = P[:, P.sum(axis=0) >= k]
+	if k == 0 and np.any(~np.any(_P, axis=0)):
+		s.add(False) # pyright: ignore
+	else:
+		for _P_j in _P.T:
+			s.add(z3.PbLe(X1[_P_j], k - 1)) # pyright: ignore
+	found = cast(bool, s.check() == z3.sat) # pyright: ignore
+	s.pop()
+	return found
+
 def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
 	config = find_config_bruteforce(P)
 	_, nV = cast(Tuple[Any, int], config)
@@ -150,21 +173,10 @@ def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
 	return 0
 
 def find_pseudo_boolean(P : npt.NDArray[np.bool_]) -> int:
-	nV = P.shape[0]
-	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
-	X1 = np.array([(x, 1) for x in X])
-	s = z3.Solver()
+	config = find_config_pseudo_boolean(P)
+	_, nV, _, _, _ = cast(Tuple[Any, int, Any, Any, Any], config)
 	for k in range(nV - 1, -1, -1):
-		s.push()
-		s.add(z3.PbEq(X1, k)) # pyright: ignore
-		_P = P[:, P.sum(axis=0) >= k]
-		if k == 0 and np.any(~np.any(_P, axis=0)):
-			s.add(False) # pyright: ignore
-		else:
-			for _P_j in _P.T:
-				s.add(z3.PbLe(X1[_P_j], k - 1)) # pyright: ignore
-		found : bool = s.check() == z3.sat # pyright: ignore
+		found = find_exact_pseudo_boolean(config, k)
 		if not found:
 			return k + 1
-		s.pop()
 	return 0
