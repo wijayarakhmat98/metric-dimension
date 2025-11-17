@@ -205,12 +205,12 @@ class find_pseudo_boolean(find):
 		self.s.pop()
 		return (result, time)
 
-ALGORITHMS = (
+ALGORITHMS = {
 	'bruteforce',
 	'boolean_satisfiability',
 	'linear_integer_arithmetic',
 	'pseudo_boolean'
-)
+}
 
 def create_find(P : npt.NDArray[np.bool_], method : str, limit : float = 0) -> find:
 	match method:
