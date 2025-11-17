@@ -107,12 +107,11 @@ def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
 def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
 	nV = P.shape[0]
 	X = np.array([z3.Int('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
-	s = z3.Solver()
-	for x in X:
-		s.add(x >= 0) # pyright: ignore
-		s.add(x <= 1) # pyright: ignore
 	for k in range(nV - 1, -1, -1):
-		s.push()
+		s = z3.Solver()
+		for x in X:
+			s.add(x >= 0) # pyright: ignore
+			s.add(x <= 1) # pyright: ignore
 		s.add(z3.Sum(*X) == k) # pyright: ignore
 		_P = P[:, P.sum(axis=0) >= k]
 		for _P_j in _P.T:
@@ -120,7 +119,6 @@ def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
 		found : bool = s.check() == z3.sat # pyright: ignore
 		if not found:
 			return k + 1
-		s.pop()
 	return 0
 
 def find_pseudo_boolean(P : npt.NDArray[np.bool_]) -> int:
