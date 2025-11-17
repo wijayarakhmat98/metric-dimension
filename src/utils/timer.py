@@ -24,7 +24,7 @@ class timeout_exception(Exception):
 	pass
 
 class timeout:
-	def __init__(self, seconds: float) -> None:
+	def __init__(self, seconds : float) -> None:
 		self.seconds = seconds
 		self._old_handler : Any = None
 
