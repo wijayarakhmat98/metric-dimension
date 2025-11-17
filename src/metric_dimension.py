@@ -3,7 +3,7 @@ import networkx as nx
 import numpy as np
 import numpy.typing as npt
 import scipy as sp # type: ignore
-from typing import cast
+from typing import Any, cast, Tuple
 import z3 # type: ignore
 
 def graph6_decode(s : str) -> npt.NDArray[np.float64]:
@@ -66,8 +66,19 @@ def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.boo
 	P = P[:, keep]
 	return P
 
-def find_exact_bruteforce(P : npt.NDArray[np.bool_], k : int) -> bool:
-	nV = P.shape[0]
+def find_config_bruteforce(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
+	nV : int = P.shape[0]
+	config = (P, nV)
+	return config
+
+def find_config_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
+	nV : int = P.shape[0]
+	X : npt.NDArray[np.object_] = np.array([z3.Int('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
+	config = (P, nV, X)
+	return config
+
+def find_exact_bruteforce(config : Tuple[Any, ...], k : int) -> bool:
+	P, nV = cast(Tuple[npt.NDArray[np.bool_], int], config)
 	_P = P[:, P.sum(axis=0) >= k]
 	combinations = itertools.combinations(range(nV), k)
 	for indices in combinations:
@@ -78,9 +89,8 @@ def find_exact_bruteforce(P : npt.NDArray[np.bool_], k : int) -> bool:
 			return True
 	return False
 
-def find_exact_linear_integer_arithmetic(P : npt.NDArray[np.bool_], k : int) -> bool:
-	nV = P.shape[0]
-	X = np.array([z3.Int('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
+def find_exact_linear_integer_arithmetic(config : Tuple[Any, ...], k : int) -> bool:
+	P, _, X = cast(Tuple[npt.NDArray[np.bool_], Any, npt.NDArray[np.object_]], config)
 	s = z3.Solver()
 	for x in X:
 		s.add(x >= 0) # pyright: ignore
@@ -93,9 +103,10 @@ def find_exact_linear_integer_arithmetic(P : npt.NDArray[np.bool_], k : int) -> 
 	return found
 
 def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
-	nV = P.shape[0]
+	config = find_config_bruteforce(P)
+	_, nV = cast(Tuple[Any, int], config)
 	for k in range(nV - 1, -1, -1):
-		found = find_exact_bruteforce(P, k)
+		found = find_exact_bruteforce(config, k)
 		if not found:
 			return k + 1
 	return 0
@@ -119,9 +130,10 @@ def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
 	return 0
 
 def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
-	nV = P.shape[0]
+	config = find_config_linear_integer_arithmetic(P)
+	_, nV, _ = cast(Tuple[Any, int, Any], config)
 	for k in range(nV - 1, -1, -1):
-		found = find_exact_linear_integer_arithmetic(P, k)
+		found = find_exact_linear_integer_arithmetic(config, k)
 		if not found:
 			return k + 1
 	return 0

@@ -38,12 +38,14 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Reduced distance similarity time: {}'.format(P_time))
 	print()
 
+	config = metric_dimension.find_config_linear_integer_arithmetic(P)
+
 	print('Metric dimension...')
 	with timer_ms() as total_time:
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			with timer_ms() as k_time:
-				found = metric_dimension.find_exact_linear_integer_arithmetic(P, k)
+				found = metric_dimension.find_exact_linear_integer_arithmetic(config, k)
 			print(k_time)
 			if not found:
 				k = k + 1
