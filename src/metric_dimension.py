@@ -147,7 +147,7 @@ def find_exact_pseudo_boolean(config : Tuple[Any, ...], k : int) -> bool:
 
 def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
 	config = find_config_bruteforce(P)
-	_, nV = cast(Tuple[Any, int], config)
+	_, nV, *_ = cast(Tuple[Any, int], config)
 	for k in range(nV - 1, -1, -1):
 		found = find_exact_bruteforce(config, k)
 		if not found:
@@ -156,7 +156,7 @@ def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
 
 def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
 	config = find_config_boolean_satisfiability(P)
-	_, nV, _, _ = cast(Tuple[Any, int, Any, Any], config)
+	_, nV, *_ = cast(Tuple[Any, int], config)
 	for k in range(nV - 1, -1, -1):
 		found = find_exact_boolean_satisfiability(config, k) # pyright: ignore
 		if not found:
@@ -165,7 +165,7 @@ def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
 
 def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
 	config = find_config_linear_integer_arithmetic(P)
-	_, nV, _ = cast(Tuple[Any, int, Any], config)
+	_, nV, *_ = cast(Tuple[Any, int], config)
 	for k in range(nV - 1, -1, -1):
 		found = find_exact_linear_integer_arithmetic(config, k)
 		if not found:
@@ -174,7 +174,7 @@ def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
 
 def find_pseudo_boolean(P : npt.NDArray[np.bool_]) -> int:
 	config = find_config_pseudo_boolean(P)
-	_, nV, _, _, _ = cast(Tuple[Any, int, Any, Any, Any], config)
+	_, nV, *_ = cast(Tuple[Any, int], config)
 	for k in range(nV - 1, -1, -1):
 		found = find_exact_pseudo_boolean(config, k)
 		if not found:
