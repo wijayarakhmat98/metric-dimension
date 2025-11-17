@@ -13,15 +13,15 @@ export INPUT='benchmark-source'
 export OUTPUT='benchmark-result'
 export SATURATION=10
 
-target="${INPUT}/${NAME}.txt"
+target="${INPUT}/${NAME}.g6"
 
 mkdir -p "${OUTPUT}"
 rm -f "${target}"
 
-echo 'Creating source for batch job...'
+echo "Creating ${target} for ${NAME} job..."
 for vertices in $VERTICES; do
 	for method in ${METHOD}; do
-		source="${INPUT}/vertices-${vertices}.txt"
+		source="${INPUT}/vertices-${vertices}.g6"
 		echo "Reading ${source}... Generating for ${method}..."
 		cat "${source}" | ./process jsonify | ./process add --key='metric_dimension' | ./process add --key='edge_metric_dimension' | ./process add --key='algorithm' --value="${method}" | ./sort >> "${target}"
 	done
