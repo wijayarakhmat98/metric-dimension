@@ -4,6 +4,10 @@ from typing import Any, cast, Tuple
 from utils import parse_switch, timer
 
 class timer_ms(timer):
+	def __init__(self, time : None | timer = None) -> None:
+		if time:
+			self.elapsed = time.elapsed
+
 	def __str__(self) -> str:
 		return '{}ms'.format(round(1000 * float(self), 3))
 
@@ -41,12 +45,20 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 		find = metric_dimension.create_find(P, method)
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
-			with timer_ms() as k_time:
-				found = find.exact(k)
-			print(k_time)
-			if not found:
-				k = k + 1
-				break
+			result, time = find.exact(k)
+			print(timer_ms(time), end='')
+			if result == metric_dimension.status.unknown:
+				print('[TIMEOUT]', end='')
+			print()
+			match result:
+				case metric_dimension.status.unknown:
+					k = -1
+					break
+				case metric_dimension.status.unsat:
+					k = k + 1
+					break
+				case metric_dimension.status.sat:
+					continue
 		else:
 			k = 0
 	print('Metric dimension: {}'.format(k))

@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 import itertools
 import networkx as nx
 import numpy as np
 import numpy.typing as npt
 import scipy as sp # type: ignore
-from typing import cast
+from typing import cast, Tuple
+from utils import timeout, timer
 import z3 # type: ignore
 
 def graph6_decode(s : str) -> npt.NDArray[np.float64]:
@@ -67,70 +69,102 @@ def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.boo
 	P = P[:, keep]
 	return P
 
+class status(Enum):
+	unknown = -1
+	unsat = 0
+	sat = 1
+
+def solve(s : z3.Solver) -> status:
+	result = s.check() # pyright: ignore
+	match result:
+		case z3.unknown:
+			return status.unknown
+		case z3.unsat:
+			return status.unsat
+		case z3.sat:
+			return status.sat
+		case _:
+			raise AssertionError
+
 class find(ABC):
 	P : npt.NDArray[np.bool_]
 	nV : int
+	limit : float
 
-	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
+	def __init__(self, P : npt.NDArray[np.bool_], limit : float = 0) -> None:
 		self.P = P
 		self.nV = P.shape[0]
+		self.limit = limit
 
 	@abstractmethod
-	def exact(self, k : int) -> bool:
+	def exact(self, k : int) -> Tuple[status, timer]:
 		pass
 
 	def minimum(self) -> int:
 		for k in range(self.nV - 1, -1, -1):
-			found = self.exact(k)
-			if not found:
-				return k + 1
+			result, _ = self.exact(k)
+			match result:
+				case status.unknown:
+					return -1
+				case status.unsat:
+					return k + 1
+				case status.sat:
+					continue
 		return 0
 
 class find_bruteforce(find):
-	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
-		super().__init__(P)
+	def __init__(self, P : npt.NDArray[np.bool_], limit : float = 0) -> None:
+		super().__init__(P, limit)
 
-	def exact(self, k : int) -> bool:
+	def exact(self, k : int) -> Tuple[status, timer]:
 		_P = self.P[:, self.P.sum(axis=0) >= k]
 		combinations = itertools.combinations(range(self.nV), k)
-		for indices in combinations:
-			W = np.zeros((self.nV, 1), dtype=np.bool_)
-			W[indices, 0] = True
-			is_subset = np.all((W | _P) == _P, axis=0)
-			if not np.any(is_subset):
-				return True
-		return False
+		with timer() as time:
+			try:
+				with timeout(self.limit):
+						for indices in combinations:
+							W = np.zeros((self.nV, 1), dtype=np.bool_)
+							W[indices, 0] = True
+							is_subset = np.all((W | _P) == _P, axis=0)
+							if not np.any(is_subset):
+								return (status.sat, time)
+			except:
+				return (status.unknown, time)
+		return (status.unsat, time)
 
 class find_boolean_satisfiability(find):
 	X : npt.NDArray[np.object_]
 	s : z3.Solver
 
-	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
-		super().__init__(P)
+	def __init__(self, P : npt.NDArray[np.bool_], limit : float = 0) -> None:
+		super().__init__(P, limit)
 		self.X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(self.nV)]) # pyright: ignore
 		self.s = z3.Solver()
+		self.s.set('timeout', self.limit) # pyright: ignore
 		if self.P.size > 0:
 			self.s.add(z3.Or(*self.X)) # pyright: ignore
 		for P_j in self.P.T:
 			self.s.add(z3.Implies(z3.Or(*self.X[P_j]), z3.Or(*self.X[~P_j]))) # pyright: ignore
 
-	def exact(self, k : int) -> bool:
+	def exact(self, k : int) -> Tuple[status, timer]:
 		self.s.push()
 		self.s.add(z3.AtLeast(*self.X, k)) # pyright: ignore
 		self.s.add(z3.AtMost(*self.X, k)) # pyright: ignore
-		found = cast(bool, self.s.check() == z3.sat) # pyright: ignore
+		with timer() as time:
+			result = solve(self.s)
 		self.s.pop()
-		return found
+		return (result, time)
 
 class find_linear_integer_arithmetic(find):
 	X : npt.NDArray[np.object_]
 
-	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
-		super().__init__(P)
+	def __init__(self, P : npt.NDArray[np.bool_], limit : float = 0) -> None:
+		super().__init__(P, limit)
 		self.X = np.array([z3.Int('x{}'.format(v + 1)) for v in range(self.nV)]) # pyright: ignore
 
-	def exact(self, k : int) -> bool:
+	def exact(self, k : int) -> Tuple[status, timer]:
 		s = z3.Solver()
+		s.set('timeout', self.limit) # pyright: ignore
 		for x in self.X:
 			s.add(x >= 0) # pyright: ignore
 			s.add(x <= 1) # pyright: ignore
@@ -138,21 +172,23 @@ class find_linear_integer_arithmetic(find):
 		_P = self.P[:, self.P.sum(axis=0) >= k]
 		for _P_j in _P.T:
 			s.add(z3.Sum(*self.X[_P_j]) <= k - 1) # pyright: ignore
-		found = cast(bool, s.check() == z3.sat) # pyright: ignore
-		return found
+		with timer() as time:
+			result = solve(s)
+		return (result, time)
 
 class find_pseudo_boolean(find):
 	X : npt.NDArray[np.object_]
 	X1 : npt.NDArray[np.object_]
 	s : z3.Solver
 
-	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
-		super().__init__(P)
+	def __init__(self, P : npt.NDArray[np.bool_], limit : float = 0) -> None:
+		super().__init__(P, limit)
 		self.X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(self.nV)]) # pyright: ignore
 		self.X1 = np.array([(x, 1) for x in self.X])
 		self.s = z3.Solver()
+		self.s.set('timeout', self.limit) # pyright: ignore
 
-	def exact(self, k : int) -> bool:
+	def exact(self, k : int) -> Tuple[status, timer]:
 		self.s.push()
 		self.s.add(z3.PbEq(self.X1, k)) # pyright: ignore
 		_P = self.P[:, self.P.sum(axis=0) >= k]
@@ -161,9 +197,10 @@ class find_pseudo_boolean(find):
 		else:
 			for _P_j in _P.T:
 				self.s.add(z3.PbLe(self.X1[_P_j], k - 1)) # pyright: ignore
-		found = cast(bool, self.s.check() == z3.sat) # pyright: ignore
+		with timer() as time:
+			result = solve(self.s)
 		self.s.pop()
-		return found
+		return (result, time)
 
 ALGORITHMS = (
 	'bruteforce',
