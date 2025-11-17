@@ -164,3 +164,23 @@ class find_pseudo_boolean(find):
 		found = cast(bool, self.s.check() == z3.sat) # pyright: ignore
 		self.s.pop()
 		return found
+
+ALGORITHMS = (
+	'bruteforce',
+	'boolean_satisfiability',
+	'linear_integer_arithmetic',
+	'pseudo_boolean'
+)
+
+def create_find(P : npt.NDArray[np.bool_], method : str) -> find:
+	match method:
+		case 'bruteforce':
+			return find_bruteforce(P)
+		case 'boolean_satisfiability':
+			return find_boolean_satisfiability(P)
+		case 'linear_integer_arithmetic':
+			return find_linear_integer_arithmetic(P)
+		case 'pseudo_boolean':
+			return find_pseudo_boolean(P)
+		case _:
+			raise AssertionError

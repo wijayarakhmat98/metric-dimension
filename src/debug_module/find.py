@@ -9,7 +9,7 @@ class timer_ms(timer):
 
 def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	method, edge = cast(Tuple[str, bool], option)
-	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
+	if method not in metric_dimension.ALGORITHMS:
 		return None
 
 	M = metric_dimension.graph6_decode(graph)
@@ -36,19 +36,9 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Reduced distance similarity time: {}'.format(P_time))
 	print()
 
-	find : metric_dimension.find
-	match method:
-		case 'bruteforce':
-			find = metric_dimension.find_bruteforce(P)
-		case 'boolean_satisfiability':
-			find = metric_dimension.find_boolean_satisfiability(P)
-		case 'linear_integer_arithmetic':
-			find = metric_dimension.find_linear_integer_arithmetic(P)
-		case 'pseudo_boolean':
-			find = metric_dimension.find_pseudo_boolean(P)
-
 	print('Metric dimension...')
 	with timer_ms() as total_time:
+		find = metric_dimension.create_find(P, method)
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			with timer_ms() as k_time:
@@ -70,9 +60,7 @@ option_spec = [
 
 def option_valid(option : Tuple[Any, ...]) -> bool:
 	method, _ = cast(Tuple[str, bool], option)
-	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
-		return False
-	return True
+	return method in metric_dimension.ALGORITHMS
 
 def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',

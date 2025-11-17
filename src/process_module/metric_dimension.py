@@ -23,7 +23,7 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 	if not datum:
 		return None
 	method, edge, limit = cast(Tuple[str, bool, float], option)
-	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
+	if method not in metric_dimension.ALGORITHMS:
 		return None
 	s = datum['graph']
 	M = metric_dimension.graph6_decode(s)
@@ -36,21 +36,12 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 		D = DV
 	B = metric_dimension.distance_similarity(D)
 	P = metric_dimension.reduced_distance_similarity(B)
-	find : metric_dimension.find
-	match method:
-		case 'bruteforce':
-			find = metric_dimension.find_bruteforce(P)
-		case 'boolean_satisfiability':
-			find = metric_dimension.find_boolean_satisfiability(P)
-		case 'linear_integer_arithmetic':
-			find = metric_dimension.find_linear_integer_arithmetic(P)
-		case 'pseudo_boolean':
-			find = metric_dimension.find_pseudo_boolean(P)
 	k = UNSET
 	k_time : Union[int, timer] = UNSET
 	try:
 		with timeout(limit):
 			with timer() as k_time:
+				find = metric_dimension.create_find(P, method)
 				k = find.minimum()
 	except timeout_exception:
 		k_time = TIMEOUT
@@ -78,9 +69,7 @@ option_spec = [
 
 def option_valid(option : Tuple[Any, ...]) -> bool:
 	method, _, _ = cast(Tuple[str, bool, float], option)
-	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
-		return False
-	return True
+	return method in metric_dimension.ALGORITHMS
 
 def option_augment(option : Tuple[Any, ...]) -> Tuple[Any, ...]:
 	mode, method, limit = cast(Tuple[str, bool, float], option)
