@@ -71,6 +71,17 @@ def find_config_bruteforce(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
 	config = (P, nV)
 	return config
 
+def find_config_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
+	nV : int = P.shape[0]
+	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
+	s = z3.Solver()
+	if P.size > 0:
+		s.add(z3.Or(*X)) # pyright: ignore
+	for P_j in P.T:
+		s.add(z3.Implies(z3.Or(*X[P_j]), z3.Or(*X[~P_j]))) # pyright: ignore
+	config = (P, nV, X, s)
+	return config
+
 def find_config_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
 	nV : int = P.shape[0]
 	X : npt.NDArray[np.object_] = np.array([z3.Int('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
@@ -88,6 +99,15 @@ def find_exact_bruteforce(config : Tuple[Any, ...], k : int) -> bool:
 		if not np.any(is_subset):
 			return True
 	return False
+
+def find_exact_boolean_satisfiability(config : Tuple[Any, ...], k : int) -> bool:
+	_, _, X, s = cast(Tuple[Any, Any, npt.NDArray[np.object_], z3.Solver], config)
+	s.push()
+	s.add(z3.AtLeast(*X, k)) # pyright: ignore
+	s.add(z3.AtMost(*X, k)) # pyright: ignore
+	found = cast(bool, s.check() == z3.sat) # pyright: ignore
+	s.pop()
+	return found
 
 def find_exact_linear_integer_arithmetic(config : Tuple[Any, ...], k : int) -> bool:
 	P, _, X = cast(Tuple[npt.NDArray[np.bool_], Any, npt.NDArray[np.object_]], config)
@@ -112,21 +132,12 @@ def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
 	return 0
 
 def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
-	nV = P.shape[0]
-	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
-	s = z3.Solver()
-	if P.size > 0:
-		s.add(z3.Or(*X)) # pyright: ignore
-	for P_j in P.T:
-		s.add(z3.Implies(z3.Or(*X[P_j]), z3.Or(*X[~P_j]))) # pyright: ignore
+	config = find_config_boolean_satisfiability(P)
+	_, nV, _, _ = cast(Tuple[Any, int, Any, Any], config)
 	for k in range(nV - 1, -1, -1):
-		s.push()
-		s.add(z3.AtLeast(*X, k)) # pyright: ignore
-		s.add(z3.AtMost(*X, k)) # pyright: ignore
-		found : bool = s.check() == z3.sat # pyright: ignore
+		found = find_exact_boolean_satisfiability(config, k) # pyright: ignore
 		if not found:
 			return k + 1
-		s.pop()
 	return 0
 
 def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
