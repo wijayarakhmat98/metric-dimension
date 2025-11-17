@@ -1,16 +1,14 @@
 import metric_dimension
 import re
 from typing import Any, cast, Tuple
-from utils import timer
+from utils import parse_switch, timer
 
 class timer_ms(timer):
 	def __str__(self) -> str:
 		return '{}ms'.format(round(1000 * float(self), 3))
 
 def debug(graph : str, option : Tuple[Any, ...]) -> None:
-	mode, method = cast(Tuple[str, str], option)
-	if mode not in ('metric-dimension', 'edge-metric-dimension'):
-		return None
+	method, edge = cast(Tuple[str, bool], option)
 	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
 		return None
 
@@ -21,13 +19,12 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print()
 
 	DV = metric_dimension.distance_matrix(M)
-	match mode:
-		case 'metric-dimension':
-			D = DV
-		case 'edge-metric-dimension':
-			E = metric_dimension.edges(M)
-			DE = metric_dimension.edge_distance_matrix(E, DV)
-			D = DE
+	if edge:
+		E = metric_dimension.edges(M)
+		DE = metric_dimension.edge_distance_matrix(E, DV)
+		D = DE
+	else:
+		D = DV
 
 	print('Distance similarity...')
 	with timer_ms() as B_time: B = metric_dimension.distance_similarity(D)
@@ -67,14 +64,12 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print()
 
 option_spec = [
-	(['-f', '--find'], 'metric-dimension', None),
 	(['-a', '--algorithm'], '', None),
+	(['--edge'], False, parse_switch)
 ]
 
 def option_valid(option : Tuple[Any, ...]) -> bool:
-	mode, method = cast(Tuple[str, str], option)
-	if mode not in ('metric-dimension', 'edge-metric-dimension'):
-		return False
+	method, _ = cast(Tuple[str, bool], option)
 	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
 		return False
 	return True
@@ -83,15 +78,13 @@ def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',
 	'''
 		options:
-			-f=<mode>, --find=<mode>
-				metric-dimension
-				edge-metric-dimension
-				Defaults to metric-dimension.
-
 			-a=<method>, --algorithm=<method>
 				bruteforce
 				boolean_satisfiability
 				linear_integer_arithmetic
 				pseudo_boolean
+
+			--edge
+				Find edge metric dimension instead of metric dimension.
 	'''
 	).strip()

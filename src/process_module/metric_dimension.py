@@ -3,7 +3,7 @@ import metric_dimension
 import os
 import re
 from typing import Any, cast, Dict, Optional, Tuple, Union
-from utils import timer, timeout, timeout_exception
+from utils import parse_switch, timer, timeout, timeout_exception
 
 preserve_order = False
 header = None
@@ -22,21 +22,18 @@ ERROR = -3
 def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Optional[Dict[str, Any]]:
 	if not datum:
 		return None
-	mode, method, limit = cast(Tuple[str, str, float], option)
-	if mode not in ('metric-dimension', 'edge-metric-dimension'):
-		return None
+	method, edge, limit = cast(Tuple[str, bool, float], option)
 	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
 		return None
 	s = datum['graph']
 	M = metric_dimension.graph6_decode(s)
 	DV = metric_dimension.distance_matrix(M)
-	match mode:
-		case 'metric-dimension':
-			D = DV
-		case 'edge-metric-dimension':
-			E = metric_dimension.edges(M)
-			DE = metric_dimension.edge_distance_matrix(E, DV)
-			D = DE
+	if edge:
+		E = metric_dimension.edges(M)
+		DE = metric_dimension.edge_distance_matrix(E, DV)
+		D = DE
+	else:
+		D = DV
 	B = metric_dimension.distance_similarity(D)
 	P = metric_dimension.reduced_distance_similarity(B)
 	find : metric_dimension.find
@@ -59,13 +56,12 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 		k_time = TIMEOUT
 	except:
 		k_time = ERROR
-	match mode:
-		case 'metric-dimension':
-			datum['metric_dimension'] = k
-			datum['metric_dimension_time'] = k_time
-		case 'edge-metric-dimension':
-			datum['edge_metric_dimension'] = k
-			datum['edge_metric_dimension_time'] = k_time
+	if edge:
+		datum['edge_metric_dimension'] = k
+		datum['edge_metric_dimension_time'] = k_time
+	else:
+		datum['metric_dimension'] = k
+		datum['metric_dimension_time'] = k_time
 	return datum
 
 def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
@@ -75,21 +71,19 @@ def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
 	return result
 
 option_spec = [
-	(['-f', '--find'], 'metric-dimension', None),
 	(['-a', '--algorithm'], '', None),
+	(['--edge'], False, parse_switch),
 	(['--timeout'], -1, float)
 ]
 
 def option_valid(option : Tuple[Any, ...]) -> bool:
-	mode, method, _ = cast(Tuple[str, str, float], option)
-	if mode not in ('metric-dimension', 'edge-metric-dimension'):
-		return False
+	method, _, _ = cast(Tuple[str, bool, float], option)
 	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
 		return False
 	return True
 
 def option_augment(option : Tuple[Any, ...]) -> Tuple[Any, ...]:
-	mode, method, limit = cast(Tuple[str, str, float], option)
+	mode, method, limit = cast(Tuple[str, bool, float], option)
 	if limit < 0:
 		if 'TIMEOUT' in os.environ:
 			try:
@@ -108,16 +102,14 @@ def help() -> str:
 			... -a=<method>>
 
 		options:
-			-f=<mode>, --find=<mode>
-				metric-dimension
-				edge-metric-dimension
-				Defaults to metric-dimension.
-
 			-a=<method>, --algorithm=<method>
 				bruteforce
 				boolean_satisfiability
 				linear_integer_arithmetic
 				pseudo_boolean
+
+			--edge
+				Find edge metric dimension instead of metric dimension.
 
 			--timeout=<seconds>
 				Stop search when over the specified amount of time.
