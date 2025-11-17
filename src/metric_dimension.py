@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 import numpy.typing as npt
 import scipy as sp # type: ignore
-from typing import cast, Tuple
+from typing import cast, List, Tuple
 from utils import timeout, timer
 import z3 # type: ignore
 
@@ -100,18 +100,20 @@ class find(ABC):
 	def exact(self, k : int) -> Tuple[status, timer]:
 		pass
 
-	def minimum(self) -> Tuple[int, timer]:
+	def minimum(self) -> Tuple[int, timer, List[timer]]:
+		internal_time : List[timer] = []
 		with timer() as k_time:
 			for k in range(self.nV - 1, -1, -1):
-				result, _ = self.exact(k)
+				result, time = self.exact(k)
+				internal_time.append(time)
 				match result:
 					case status.unknown:
-						return (-1, k_time)
+						return (-1, k_time, internal_time)
 					case status.unsat:
-						return (k + 1, k_time)
+						return (k + 1, k_time, internal_time)
 					case status.sat:
 						continue
-		return (0, k_time)
+		return (0, k_time, internal_time)
 
 class find_bruteforce(find):
 	def __init__(self, P : npt.NDArray[np.bool_], limit : float = 0) -> None:

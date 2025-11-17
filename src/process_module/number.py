@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+from functools import partial
 import json
 import re
 from typing import Any, cast, Dict, Optional, Tuple, Union
@@ -16,9 +18,13 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 	if not datum:
 		return None
 	regex, magnitude, precision, unit = cast(Tuple[str, int, int, str], option)
+	format_number_bind = partial(format_number, o = magnitude, p = precision, u = unit)
 	for key, value in datum.items():
 		if re.search(regex, key):
-			datum[key] = format_number(value, magnitude, precision, unit)
+			if isinstance(datum[key], Iterable):
+				datum[key] = list(map(format_number_bind, datum[key]))
+			else:
+				datum[key] = format_number_bind(value)
 	return datum
 
 def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:

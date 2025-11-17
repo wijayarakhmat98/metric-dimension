@@ -3,7 +3,7 @@ import metric_dimension
 import os
 import re
 from typing import Any, cast, Dict, Optional, Tuple
-from utils import parse_switch
+from utils import parse_switch, timer
 
 preserve_order = False
 header = None
@@ -21,25 +21,30 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 	method, edge, _ = cast(Tuple[str, bool, float], option)
 	if method not in metric_dimension.ALGORITHMS:
 		return None
-	s = datum['graph']
-	M = metric_dimension.graph6_decode(s)
-	DV = metric_dimension.distance_matrix(M)
-	if edge:
-		E = metric_dimension.edges(M)
-		DE = metric_dimension.edge_distance_matrix(E, DV)
-		D = DE
-	else:
-		D = DV
-	B = metric_dimension.distance_similarity(D)
-	P = metric_dimension.reduced_distance_similarity(B)
-	find = metric_dimension.create_find(P, method)
-	k, k_time = find.minimum()
+	with timer() as total_time:
+		s = datum['graph']
+		M = metric_dimension.graph6_decode(s)
+		DV = metric_dimension.distance_matrix(M)
+		if edge:
+			E = metric_dimension.edges(M)
+			DE = metric_dimension.edge_distance_matrix(E, DV)
+			D = DE
+		else:
+			D = DV
+		B = metric_dimension.distance_similarity(D)
+		P = metric_dimension.reduced_distance_similarity(B)
+		find = metric_dimension.create_find(P, method)
+		k, k_time, internal_time = find.minimum()
 	if edge:
 		datum['edge_metric_dimension'] = k
 		datum['edge_metric_dimension_time'] = k_time
+		datum['edge_metric_dimension_internal_time'] = internal_time
+		datum['edge_metric_dimension_total_time'] = total_time
 	else:
 		datum['metric_dimension'] = k
 		datum['metric_dimension_time'] = k_time
+		datum['metric_dimension_internal_time'] = internal_time
+		datum['metric_dimension_total_time'] = total_time
 	return datum
 
 def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
