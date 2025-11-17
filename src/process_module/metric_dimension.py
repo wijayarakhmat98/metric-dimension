@@ -2,8 +2,8 @@ import json
 import metric_dimension
 import os
 import re
-from typing import Any, cast, Dict, Optional, Tuple
-from utils import parse_switch, timer
+from typing import Any, cast, Dict, List, Optional, Tuple
+from utils import timer
 
 preserve_order = False
 header = None
@@ -18,35 +18,50 @@ def decode(result : str) -> Optional[Dict[str, Any]]:
 def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Optional[Dict[str, Any]]:
 	if not datum:
 		return None
-	method, edge, limit = cast(Tuple[str, bool, float], option)
-	if method not in metric_dimension.ALGORITHMS:
-		return None
-	with timer() as total_time:
-		s = datum['graph']
-		M = metric_dimension.graph6_decode(s)
-		DV = metric_dimension.distance_matrix(M)
-		E = metric_dimension.edges(M)
-		DE = metric_dimension.edge_distance_matrix(E, DV)
-		if edge:
-			D = DE
-		else:
-			D = DV
-		B = metric_dimension.distance_similarity(D)
-		P = metric_dimension.reduced_distance_similarity(B)
-		find = metric_dimension.create_find(P, method, limit)
-		k, k_time, internal_time = find.minimum()
-	datum['vertices'] = M.shape[0]
-	datum['edges'] = E.shape[0]
-	if edge:
-		datum['edge_metric_dimension'] = k
-		datum['edge_metric_dimension_time'] = k_time
-		datum['edge_metric_dimension_internal_time'] = internal_time
-		datum['edge_metric_dimension_total_time'] = total_time
+	mode : List[bool] = []
+	if {'metric_dimension', 'edge_metric_dimension'} & set(datum):
+		if 'metric_dimension' in datum and datum['metric_dimension'] is None:
+			mode.append(False)
+		if 'edge_metric_dimension' in datum and datum['edge_metric_dimension'] is None:
+			mode.append(True)
+		if not mode:
+			return datum
 	else:
-		datum['metric_dimension'] = k
-		datum['metric_dimension_time'] = k_time
-		datum['metric_dimension_internal_time'] = internal_time
-		datum['metric_dimension_total_time'] = total_time
+		return None
+	if 'algorithm' in datum:
+		method = datum['algorithm']
+		if method not in metric_dimension.ALGORITHMS:
+			return None
+	else:
+		return None
+	limit, = cast(Tuple[float], option)
+	for edge in mode:
+		with timer() as total_time:
+			s = datum['graph']
+			M = metric_dimension.graph6_decode(s)
+			DV = metric_dimension.distance_matrix(M)
+			E = metric_dimension.edges(M)
+			DE = metric_dimension.edge_distance_matrix(E, DV)
+			if edge:
+				D = DE
+			else:
+				D = DV
+			B = metric_dimension.distance_similarity(D)
+			P = metric_dimension.reduced_distance_similarity(B)
+			find = metric_dimension.create_find(P, method, limit)
+			k, k_time, internal_time = find.minimum()
+		datum['vertices'] = M.shape[0]
+		datum['edges'] = E.shape[0]
+		if edge:
+			datum['edge_metric_dimension'] = k
+			datum['edge_metric_dimension_time'] = k_time
+			datum['edge_metric_dimension_internal_time'] = internal_time
+			datum['edge_metric_dimension_total_time'] = total_time
+		else:
+			datum['metric_dimension'] = k
+			datum['metric_dimension_time'] = k_time
+			datum['metric_dimension_internal_time'] = internal_time
+			datum['metric_dimension_total_time'] = total_time
 	return datum
 
 def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
@@ -56,17 +71,13 @@ def encode(datum : Optional[Dict[str, Any]]) -> Optional[str]:
 	return result
 
 option_spec = [
-	(['-a', '--algorithm'], '', None),
-	(['--edge'], False, parse_switch),
 	(['--timeout'], -1, float)
 ]
 
-def option_valid(option : Tuple[Any, ...]) -> bool:
-	method, _, _ = cast(Tuple[str, bool, float], option)
-	return method in metric_dimension.ALGORITHMS
+option_valid = None
 
 def option_augment(option : Tuple[Any, ...]) -> Tuple[Any, ...]:
-	mode, method, limit = cast(Tuple[str, bool, float], option)
+	limit, = cast(Tuple[float], option)
 	if limit < 0:
 		if 'TIMEOUT' in os.environ:
 			try:
@@ -75,7 +86,7 @@ def option_augment(option : Tuple[Any, ...]) -> Tuple[Any, ...]:
 				pass
 		if limit < 0:
 			limit = 0
-	option = (mode, method, limit)
+	option = (limit,)
 	return option
 
 def help() -> str:
@@ -85,15 +96,6 @@ def help() -> str:
 			... -a=<method>>
 
 		options:
-			-a=<method>, --algorithm=<method>
-				bruteforce
-				boolean_satisfiability
-				linear_integer_arithmetic
-				pseudo_boolean
-
-			--edge
-				Find edge metric dimension instead of metric dimension.
-
 			--timeout=<seconds>
 				Stop search when over the specified amount of time.
 				Defaults to 0, meaning no limit.
