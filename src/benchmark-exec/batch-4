@@ -6,14 +6,4 @@ export VERTICES=''
 export VERTICES="${VERTICES} 35"
 export VERTICES="${VERTICES} 40"
 
-export MODE=''
-export MODE="${MODE} metric-dimension"
-export MODE="${MODE} edge-metric-dimension"
-
-export METHOD=''
-export METHOD="${METHOD} bruteforce"
-export METHOD="${METHOD} boolean_satisfiability"
-export METHOD="${METHOD} linear_integer_arithmetic"
-export METHOD="${METHOD} pseudo_boolean"
-
 ./benchmark-exec/main

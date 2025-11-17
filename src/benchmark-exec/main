@@ -2,6 +2,16 @@
 
 set -euo pipefail
 
+export MODE=''
+export MODE="${MODE} metric-dimension"
+export MODE="${MODE} edge-metric-dimension"
+
+export METHOD=''
+export METHOD="${METHOD} bruteforce"
+export METHOD="${METHOD} boolean_satisfiability"
+export METHOD="${METHOD} linear_integer_arithmetic"
+export METHOD="${METHOD} pseudo_boolean"
+
 export TIMEOUT=300
 export INPUT='benchmark-source'
 export OUTPUT='benchmark-result'
@@ -22,7 +32,11 @@ for vertices in $VERTICES; do
 			source="${INPUT}/vertices-${vertices}.txt"
 			target="${OUTPUT}/vertices-${vertices}.${mode}.${method}.txt"
 			echo -e "[VERTICES ${vertices}]\t[FIND ${mode}] \t[ALGORITHM ${method}]"
-			./process metric_dimension --find="${mode}" --algorithm="${method}" < "${source}" > "${target}"
+			if [ "${mode}" = "metric-dimension" ]; then
+				./process metric_dimension --algorithm="${method}" < "${source}" > "${target}"
+			else
+				./process metric_dimension --edge --algorithm="${method}" < "${source}" > "${target}"
+			fi
 		done
 	done
 done
