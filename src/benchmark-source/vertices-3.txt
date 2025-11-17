@@ -1,2 +1,2 @@
-{"graph": "BW"}
-{"graph": "Bw"}
+BW
+Bw

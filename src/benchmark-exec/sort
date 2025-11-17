@@ -6,9 +6,9 @@ export OUTPUT='benchmark-result'
 
 mkdir -p "${OUTPUT}"
 
-for source in benchmark-result/*; do
+for source in benchmark-result/*.txt; do
 	file="${source%%.txt}"
 	target="${file}.sort"
 	echo "Sorting ${file}..."
-	./sort < "${source}" > "${target}"
+	cat "${source}"  | ./sort | ./sort -r='algorithm' | ./sort -r='vertices' > "${target}"
 done

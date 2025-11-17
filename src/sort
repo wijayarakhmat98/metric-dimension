@@ -41,7 +41,7 @@ def main(args : List[str]) -> None:
 		return
 	results = read_file(sys.stdin)
 	with multiprocessing.Pool(processes=number_of_threads) as pool:
-		data = list(pool.imap_unordered(decode, results))
+		data = list(pool.imap(decode, results))
 	if not data:
 		return
 	key = next((key for key in data[0].keys() if re.search(regex, key)), None)

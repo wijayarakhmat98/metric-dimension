@@ -2,10 +2,6 @@
 
 set -euo pipefail
 
-export MODE=''
-export MODE="${MODE} metric-dimension"
-export MODE="${MODE} edge-metric-dimension"
-
 export METHOD=''
 export METHOD="${METHOD} bruteforce"
 export METHOD="${METHOD} boolean_satisfiability"
@@ -15,28 +11,29 @@ export METHOD="${METHOD} pseudo_boolean"
 export TIMEOUT=300
 export INPUT='benchmark-source'
 export OUTPUT='benchmark-result'
-export SATURATION=5
+export SATURATION=10
+
+target="${INPUT}/${NAME}.txt"
 
 mkdir -p "${OUTPUT}"
+rm -f "${target}"
 
-for ((i = 1; i <= $SATURATION; ++i)); do
-	echo "Initial ${i} of ${SATURATION}... Saturating CPU..."
-	nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
-done
-
+echo 'Creating source for batch job...'
 for vertices in $VERTICES; do
-	echo "[VERTICES ${vertices}] Saturating CPU..."
-	nauty-geng -cq 8 | ./process jsonify | ./process metric_dimension -a=pseudo_boolean | ./process metric_dimension -f=edge-metric-dimension -a=pseudo_boolean > /dev/null
-	for mode in ${MODE}; do
-		for method in ${METHOD}; do
-			source="${INPUT}/vertices-${vertices}.txt"
-			target="${OUTPUT}/vertices-${vertices}.${mode}.${method}.txt"
-			echo -e "[VERTICES ${vertices}]\t[FIND ${mode}] \t[ALGORITHM ${method}]"
-			if [ "${mode}" = "metric-dimension" ]; then
-				./process metric_dimension --algorithm="${method}" < "${source}" > "${target}"
-			else
-				./process metric_dimension --edge --algorithm="${method}" < "${source}" > "${target}"
-			fi
-		done
+	for method in ${METHOD}; do
+		source="${INPUT}/vertices-${vertices}.txt"
+		echo "Reading ${source}... Generating for ${method}..."
+		cat "${source}" | ./process jsonify | ./process add --key='metric_dimension' | ./process add --key='edge_metric_dimension' | ./process add --key='algorithm' --value="${method}" | ./sort >> "${target}"
 	done
 done
+
+source="${target}"
+target="${OUTPUT}/${NAME}.txt"
+
+for ((i = 1; i <= $SATURATION; ++i)); do
+	echo "Saturating CPU... (${i} of ${SATURATION})"
+	nauty-geng -cq 8 | ./process jsonify | ./process add --key='metric_dimension' | ./process add --key='edge_metric_dimension' | ./process add --key='algorithm' --value='pseudo_boolean' | ./process metric_dimension > /dev/null
+done
+
+echo 'Processing...'
+./process metric_dimension < "${source}" > "${target}"

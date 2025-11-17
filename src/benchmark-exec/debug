@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+export NAME='debug'
+
 export VERTICES=''
 export VERTICES="${VERTICES} 1"
 export VERTICES="${VERTICES} 2"

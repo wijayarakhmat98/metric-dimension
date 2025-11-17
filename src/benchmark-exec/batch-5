@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+export NAME='batch-5'
+
 export VERTICES=''
 export VERTICES="${VERTICES} 45"
 export VERTICES="${VERTICES} 50"
