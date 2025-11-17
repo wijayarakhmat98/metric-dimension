@@ -41,7 +41,7 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print()
 
 	print('Metric dimension...')
-	with timer_ms() as total_time:
+	with timer_ms() as k_time:
 		find = metric_dimension.create_find(P, method)
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
@@ -61,8 +61,12 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 					continue
 		else:
 			k = 0
-	print('Metric dimension: {}'.format(k))
-	print('Metric dimension time: {}'.format(total_time))
+	if edge:
+		print('Edge metric dimension: {}'.format(k))
+		print('Edge metric dimension time: {}'.format(k_time))
+	else:
+		print('Metric dimension: {}'.format(k))
+		print('Metric dimension time: {}'.format(k_time))
 	print()
 
 option_spec = [
