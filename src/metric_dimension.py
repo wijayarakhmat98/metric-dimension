@@ -143,7 +143,7 @@ class find_boolean_satisfiability(find):
 		super().__init__(P, limit)
 		self.X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(self.nV)]) # pyright: ignore
 		self.s = z3.Solver()
-		self.s.set('timeout', self.limit) # pyright: ignore
+		self.s.set('timeout', int(1000 * self.limit)) # pyright: ignore
 		if self.P.size > 0:
 			self.s.add(z3.Or(*self.X)) # pyright: ignore
 		for P_j in self.P.T:
@@ -167,7 +167,7 @@ class find_linear_integer_arithmetic(find):
 
 	def exact(self, k : int) -> Tuple[status, timer]:
 		s = z3.Solver()
-		s.set('timeout', self.limit) # pyright: ignore
+		s.set('timeout', int(1000 * self.limit)) # pyright: ignore
 		for x in self.X:
 			s.add(x >= 0) # pyright: ignore
 			s.add(x <= 1) # pyright: ignore
@@ -189,7 +189,7 @@ class find_pseudo_boolean(find):
 		self.X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(self.nV)]) # pyright: ignore
 		self.X1 = np.array([(x, 1) for x in self.X])
 		self.s = z3.Solver()
-		self.s.set('timeout', self.limit) # pyright: ignore
+		self.s.set('timeout', int(1000 * self.limit)) # pyright: ignore
 
 	def exact(self, k : int) -> Tuple[status, timer]:
 		self.s.push()
@@ -212,15 +212,15 @@ ALGORITHMS = (
 	'pseudo_boolean'
 )
 
-def create_find(P : npt.NDArray[np.bool_], method : str) -> find:
+def create_find(P : npt.NDArray[np.bool_], method : str, limit : float = 0) -> find:
 	match method:
 		case 'bruteforce':
-			return find_bruteforce(P)
+			return find_bruteforce(P, limit)
 		case 'boolean_satisfiability':
-			return find_boolean_satisfiability(P)
+			return find_boolean_satisfiability(P, limit)
 		case 'linear_integer_arithmetic':
-			return find_linear_integer_arithmetic(P)
+			return find_linear_integer_arithmetic(P, limit)
 		case 'pseudo_boolean':
-			return find_pseudo_boolean(P)
+			return find_pseudo_boolean(P, limit)
 		case _:
 			raise AssertionError

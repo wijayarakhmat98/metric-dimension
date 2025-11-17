@@ -12,20 +12,22 @@ class timer_ms(timer):
 		return '{}ms'.format(round(1000 * float(self), 3))
 
 def debug(graph : str, option : Tuple[Any, ...]) -> None:
-	method, edge = cast(Tuple[str, bool], option)
+	method, edge, limit = cast(Tuple[str, bool, float], option)
 	if method not in metric_dimension.ALGORITHMS:
 		return None
 
 	M = metric_dimension.graph6_decode(graph)
+	E = metric_dimension.edges(M)
 	nV = M.shape[0]
+	nE = E.shape[0]
 	print('Graph: {}'.format(graph))
 	print('Vertices: {}'.format(nV))
+	print('Edges: {}'.format(nE))
 	print()
 
 	DV = metric_dimension.distance_matrix(M)
+	DE = metric_dimension.edge_distance_matrix(E, DV)
 	if edge:
-		E = metric_dimension.edges(M)
-		DE = metric_dimension.edge_distance_matrix(E, DV)
 		D = DE
 	else:
 		D = DV
@@ -42,13 +44,13 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 
 	print('Metric dimension...')
 	with timer_ms() as k_time:
-		find = metric_dimension.create_find(P, method)
+		find = metric_dimension.create_find(P, method, limit)
 		for k in range(nV, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			result, time = find.exact(k)
 			print(timer_ms(time), end='')
 			if result == metric_dimension.status.unknown:
-				print('[TIMEOUT]', end='')
+				print(' [TIMEOUT]', end='')
 			print()
 			match result:
 				case metric_dimension.status.unknown:
@@ -71,11 +73,12 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 
 option_spec = [
 	(['-a', '--algorithm'], '', None),
-	(['--edge'], False, parse_switch)
+	(['--edge'], False, parse_switch),
+	(['--timeout'], 0, float)
 ]
 
 def option_valid(option : Tuple[Any, ...]) -> bool:
-	method, _ = cast(Tuple[str, bool], option)
+	method, _, _ = cast(Tuple[str, bool, float], option)
 	return method in metric_dimension.ALGORITHMS
 
 def help() -> str:
@@ -90,5 +93,9 @@ def help() -> str:
 
 			--edge
 				Find edge metric dimension instead of metric dimension.
+
+			--timeout=<seconds>
+				Stop search when over the specified amount of time.
+				Defaults to 0, meaning no limit.
 	'''
 	).strip()

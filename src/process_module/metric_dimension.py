@@ -18,23 +18,25 @@ def decode(result : str) -> Optional[Dict[str, Any]]:
 def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Optional[Dict[str, Any]]:
 	if not datum:
 		return None
-	method, edge, _ = cast(Tuple[str, bool, float], option)
+	method, edge, limit = cast(Tuple[str, bool, float], option)
 	if method not in metric_dimension.ALGORITHMS:
 		return None
 	with timer() as total_time:
 		s = datum['graph']
 		M = metric_dimension.graph6_decode(s)
 		DV = metric_dimension.distance_matrix(M)
+		E = metric_dimension.edges(M)
+		DE = metric_dimension.edge_distance_matrix(E, DV)
 		if edge:
-			E = metric_dimension.edges(M)
-			DE = metric_dimension.edge_distance_matrix(E, DV)
 			D = DE
 		else:
 			D = DV
 		B = metric_dimension.distance_similarity(D)
 		P = metric_dimension.reduced_distance_similarity(B)
-		find = metric_dimension.create_find(P, method)
+		find = metric_dimension.create_find(P, method, limit)
 		k, k_time, internal_time = find.minimum()
+	datum['vertices'] = M.shape[0]
+	datum['edges'] = E.shape[0]
 	if edge:
 		datum['edge_metric_dimension'] = k
 		datum['edge_metric_dimension_time'] = k_time
