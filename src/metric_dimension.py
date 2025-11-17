@@ -4,7 +4,7 @@ import networkx as nx
 import numpy as np
 import numpy.typing as npt
 import scipy as sp # type: ignore
-from typing import Any, cast, Tuple
+from typing import cast
 import z3 # type: ignore
 
 def graph6_decode(s : str) -> npt.NDArray[np.float64]:
@@ -67,29 +67,6 @@ def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.boo
 	P = P[:, keep]
 	return P
 
-def find_config_pseudo_boolean(P : npt.NDArray[np.bool_]) -> Tuple[Any, ...]:
-	nV : int = P.shape[0]
-	nV = P.shape[0]
-	X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(nV)]) # pyright: ignore
-	X1 = np.array([(x, 1) for x in X])
-	s = z3.Solver()
-	config = (P, nV, X, X1, s)
-	return config
-
-def find_exact_pseudo_boolean(config : Tuple[Any, ...], k : int) -> bool:
-	P, _, _, X1, s = cast(Tuple[npt.NDArray[np.bool_], Any, Any, npt.NDArray[np.object_], z3.Solver], config)
-	s.push()
-	s.add(z3.PbEq(X1, k)) # pyright: ignore
-	_P = P[:, P.sum(axis=0) >= k]
-	if k == 0 and np.any(~np.any(_P, axis=0)):
-		s.add(False) # pyright: ignore
-	else:
-		for _P_j in _P.T:
-			s.add(z3.PbLe(X1[_P_j], k - 1)) # pyright: ignore
-	found = cast(bool, s.check() == z3.sat) # pyright: ignore
-	s.pop()
-	return found
-
 def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
 	find : find_class = find_class_bruteforce(P)
 	return find.minimum()
@@ -103,13 +80,8 @@ def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
 	return find.minimum()
 
 def find_pseudo_boolean(P : npt.NDArray[np.bool_]) -> int:
-	config = find_config_pseudo_boolean(P)
-	_, nV, *_ = cast(Tuple[Any, int], config)
-	for k in range(nV - 1, -1, -1):
-		found = find_exact_pseudo_boolean(config, k)
-		if not found:
-			return k + 1
-	return 0
+	find : find_class = find_class_pseudo_boolean(P)
+	return find.minimum()
 
 class find_class(ABC):
 	P : npt.NDArray[np.bool_]
@@ -183,4 +155,28 @@ class find_class_linear_integer_arithmetic(find_class):
 		for _P_j in _P.T:
 			s.add(z3.Sum(*self.X[_P_j]) <= k - 1) # pyright: ignore
 		found = cast(bool, s.check() == z3.sat) # pyright: ignore
+		return found
+
+class find_class_pseudo_boolean(find_class):
+	X : npt.NDArray[np.object_]
+	X1 : npt.NDArray[np.object_]
+	s : z3.Solver
+
+	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
+		super().__init__(P)
+		self.X = np.array([z3.Bool('x{}'.format(v + 1)) for v in range(self.nV)]) # pyright: ignore
+		self.X1 = np.array([(x, 1) for x in self.X])
+		self.s = z3.Solver()
+
+	def exact(self, k : int) -> bool:
+		self.s.push()
+		self.s.add(z3.PbEq(self.X1, k)) # pyright: ignore
+		_P = self.P[:, self.P.sum(axis=0) >= k]
+		if k == 0 and np.any(~np.any(_P, axis=0)):
+			self.s.add(False) # pyright: ignore
+		else:
+			for _P_j in _P.T:
+				self.s.add(z3.PbLe(self.X1[_P_j], k - 1)) # pyright: ignore
+		found = cast(bool, self.s.check() == z3.sat) # pyright: ignore
+		self.s.pop()
 		return found
