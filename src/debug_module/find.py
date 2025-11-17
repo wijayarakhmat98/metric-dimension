@@ -8,8 +8,10 @@ class timer_ms(timer):
 		return '{}ms'.format(round(1000 * float(self), 3))
 
 def debug(graph : str, option : Tuple[Any, ...]) -> None:
-	mode, = cast(Tuple[str], option)
+	mode, method = cast(Tuple[str, str], option)
 	if mode not in ('metric-dimension', 'edge-metric-dimension'):
+		return None
+	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
 		return None
 
 	M = metric_dimension.graph6_decode(graph)
@@ -37,9 +39,19 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Reduced distance similarity time: {}'.format(P_time))
 	print()
 
+	find : metric_dimension.find_class
+	match method:
+		case 'bruteforce':
+			find = metric_dimension.find_class_bruteforce(P)
+		case 'boolean_satisfiability':
+			find = metric_dimension.find_class_boolean_satisfiability(P)
+		case 'linear_integer_arithmetic':
+			find = metric_dimension.find_class_linear_integer_arithmetic(P)
+		case 'pseudo_boolean':
+			find = metric_dimension.find_class_pseudo_boolean(P)
+
 	print('Metric dimension...')
 	with timer_ms() as total_time:
-		find : metric_dimension.find_class = metric_dimension.find_class_bruteforce(P)
 		for k in range(nV - 1, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			with timer_ms() as k_time:
@@ -55,12 +67,15 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print()
 
 option_spec = [
-	(['-f', '--find'], 'metric-dimension', None)
+	(['-f', '--find'], 'metric-dimension', None),
+	(['-a', '--algorithm'], '', None),
 ]
 
 def option_valid(option : Tuple[Any, ...]) -> bool:
-	mode, = cast(Tuple[str], option)
+	mode, method = cast(Tuple[str, str], option)
 	if mode not in ('metric-dimension', 'edge-metric-dimension'):
+		return False
+	if method not in ('bruteforce', 'boolean_satisfiability', 'linear_integer_arithmetic', 'pseudo_boolean'):
 		return False
 	return True
 
@@ -72,5 +87,11 @@ def help() -> str:
 				metric-dimension
 				edge-metric-dimension
 				Defaults to metric-dimension.
+
+			-a=<method>, --algorithm=<method>
+				bruteforce
+				boolean_satisfiability
+				linear_integer_arithmetic
+				pseudo_boolean
 	'''
 	).strip()
