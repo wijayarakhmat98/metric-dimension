@@ -14,8 +14,6 @@ export OUTPUT='benchmark-result'
 export SATURATION=10
 
 target="${INPUT}/${NAME}.g6"
-
-mkdir -p "${OUTPUT}"
 rm -f "${target}"
 
 echo "Creating ${target} for ${NAME} job..."
@@ -29,6 +27,7 @@ done
 
 source="${target}"
 target="${OUTPUT}/${NAME}.txt"
+mkdir -p "${OUTPUT}"
 
 for ((i = 1; i <= $SATURATION; ++i)); do
 	echo "Saturating CPU... (${i} of ${SATURATION})"
