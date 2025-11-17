@@ -2,8 +2,8 @@ import json
 import metric_dimension
 import os
 import re
-from typing import Any, cast, Dict, Optional, Tuple, Union
-from utils import parse_switch, timer, timeout, timeout_exception
+from typing import Any, cast, Dict, Optional, Tuple
+from utils import parse_switch
 
 preserve_order = False
 header = None
@@ -15,14 +15,10 @@ def decode(result : str) -> Optional[Dict[str, Any]]:
 	except:
 		return None
 
-UNSET = -1
-TIMEOUT = -2
-ERROR = -3
-
 def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Optional[Dict[str, Any]]:
 	if not datum:
 		return None
-	method, edge, limit = cast(Tuple[str, bool, float], option)
+	method, edge, _ = cast(Tuple[str, bool, float], option)
 	if method not in metric_dimension.ALGORITHMS:
 		return None
 	s = datum['graph']
@@ -36,17 +32,8 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 		D = DV
 	B = metric_dimension.distance_similarity(D)
 	P = metric_dimension.reduced_distance_similarity(B)
-	k = UNSET
-	k_time : Union[int, timer] = UNSET
-	try:
-		with timeout(limit):
-			with timer() as k_time:
-				find = metric_dimension.create_find(P, method)
-				k = find.minimum()
-	except timeout_exception:
-		k_time = TIMEOUT
-	except:
-		k_time = ERROR
+	find = metric_dimension.create_find(P, method)
+	k, k_time = find.minimum()
 	if edge:
 		datum['edge_metric_dimension'] = k
 		datum['edge_metric_dimension_time'] = k_time

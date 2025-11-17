@@ -100,17 +100,18 @@ class find(ABC):
 	def exact(self, k : int) -> Tuple[status, timer]:
 		pass
 
-	def minimum(self) -> int:
-		for k in range(self.nV - 1, -1, -1):
-			result, _ = self.exact(k)
-			match result:
-				case status.unknown:
-					return -1
-				case status.unsat:
-					return k + 1
-				case status.sat:
-					continue
-		return 0
+	def minimum(self) -> Tuple[int, timer]:
+		with timer() as k_time:
+			for k in range(self.nV - 1, -1, -1):
+				result, _ = self.exact(k)
+				match result:
+					case status.unknown:
+						return (-1, k_time)
+					case status.unsat:
+						return (k + 1, k_time)
+					case status.sat:
+						continue
+		return (0, k_time)
 
 class find_bruteforce(find):
 	def __init__(self, P : npt.NDArray[np.bool_], limit : float = 0) -> None:
