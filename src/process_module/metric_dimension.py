@@ -39,21 +39,22 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 			D = DE
 	B = metric_dimension.distance_similarity(D)
 	P = metric_dimension.reduced_distance_similarity(B)
+	find : metric_dimension.find
 	match method:
 		case 'bruteforce':
-			find = metric_dimension.find_bruteforce
+			find = metric_dimension.find_bruteforce(P)
 		case 'boolean_satisfiability':
-			find = metric_dimension.find_boolean_satisfiability
+			find = metric_dimension.find_boolean_satisfiability(P)
 		case 'linear_integer_arithmetic':
-			find = metric_dimension.find_linear_integer_arithmetic
+			find = metric_dimension.find_linear_integer_arithmetic(P)
 		case 'pseudo_boolean':
-			find = metric_dimension.find_pseudo_boolean
+			find = metric_dimension.find_pseudo_boolean(P)
 	k = UNSET
 	k_time : Union[int, timer] = UNSET
 	try:
 		with timeout(limit):
 			with timer() as k_time:
-				k = find(P)
+				k = find.minimum()
 	except timeout_exception:
 		k_time = TIMEOUT
 	except:

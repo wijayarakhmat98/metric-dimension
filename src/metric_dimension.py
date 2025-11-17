@@ -67,23 +67,7 @@ def reduced_distance_similarity(B : npt.NDArray[np.bool_]) -> npt.NDArray[np.boo
 	P = P[:, keep]
 	return P
 
-def find_bruteforce(P : npt.NDArray[np.bool_]) -> int:
-	find : find_class = find_class_bruteforce(P)
-	return find.minimum()
-
-def find_boolean_satisfiability(P : npt.NDArray[np.bool_]) -> int:
-	find : find_class = find_class_boolean_satisfiability(P)
-	return find.minimum()
-
-def find_linear_integer_arithmetic(P : npt.NDArray[np.bool_]) -> int:
-	find : find_class = find_class_linear_integer_arithmetic(P)
-	return find.minimum()
-
-def find_pseudo_boolean(P : npt.NDArray[np.bool_]) -> int:
-	find : find_class = find_class_pseudo_boolean(P)
-	return find.minimum()
-
-class find_class(ABC):
+class find(ABC):
 	P : npt.NDArray[np.bool_]
 	nV : int
 
@@ -102,7 +86,7 @@ class find_class(ABC):
 				return k + 1
 		return 0
 
-class find_class_bruteforce(find_class):
+class find_bruteforce(find):
 	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
 		super().__init__(P)
 
@@ -117,7 +101,7 @@ class find_class_bruteforce(find_class):
 				return True
 		return False
 
-class find_class_boolean_satisfiability(find_class):
+class find_boolean_satisfiability(find):
 	X : npt.NDArray[np.object_]
 	s : z3.Solver
 
@@ -138,7 +122,7 @@ class find_class_boolean_satisfiability(find_class):
 		self.s.pop()
 		return found
 
-class find_class_linear_integer_arithmetic(find_class):
+class find_linear_integer_arithmetic(find):
 	X : npt.NDArray[np.object_]
 
 	def __init__(self, P : npt.NDArray[np.bool_]) -> None:
@@ -157,7 +141,7 @@ class find_class_linear_integer_arithmetic(find_class):
 		found = cast(bool, s.check() == z3.sat) # pyright: ignore
 		return found
 
-class find_class_pseudo_boolean(find_class):
+class find_pseudo_boolean(find):
 	X : npt.NDArray[np.object_]
 	X1 : npt.NDArray[np.object_]
 	s : z3.Solver

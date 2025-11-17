@@ -39,16 +39,16 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Reduced distance similarity time: {}'.format(P_time))
 	print()
 
-	find : metric_dimension.find_class
+	find : metric_dimension.find
 	match method:
 		case 'bruteforce':
-			find = metric_dimension.find_class_bruteforce(P)
+			find = metric_dimension.find_bruteforce(P)
 		case 'boolean_satisfiability':
-			find = metric_dimension.find_class_boolean_satisfiability(P)
+			find = metric_dimension.find_boolean_satisfiability(P)
 		case 'linear_integer_arithmetic':
-			find = metric_dimension.find_class_linear_integer_arithmetic(P)
+			find = metric_dimension.find_linear_integer_arithmetic(P)
 		case 'pseudo_boolean':
-			find = metric_dimension.find_class_pseudo_boolean(P)
+			find = metric_dimension.find_pseudo_boolean(P)
 
 	print('Metric dimension...')
 	with timer_ms() as total_time:
