@@ -103,7 +103,7 @@ class find(ABC):
 	def minimum(self) -> Tuple[int, timer, List[timer]]:
 		internal_time : List[timer] = []
 		with timer() as k_time:
-			for k in range(self.nV - 1, -1, -1):
+			for k in range(self.nV, -1, -1):
 				result, time = self.exact(k)
 				internal_time.append(time)
 				match result:

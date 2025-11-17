@@ -43,7 +43,7 @@ def debug(graph : str, option : Tuple[Any, ...]) -> None:
 	print('Metric dimension...')
 	with timer_ms() as k_time:
 		find = metric_dimension.create_find(P, method)
-		for k in range(nV - 1, -1, -1):
+		for k in range(nV, -1, -1):
 			print('Trying k = {}... '.format(k), end='', flush=True)
 			result, time = find.exact(k)
 			print(timer_ms(time), end='')
