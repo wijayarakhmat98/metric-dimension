@@ -11,7 +11,7 @@ RUN apt-get -y dist-upgrade && \
     apt-get -y autopurge && \
     apt-get -y install curl git gnupg less man patch ssh vim
 
-RUN apt-get -y install bzip2 nauty
+RUN apt-get -y install bzip2 nauty xz-utils
 
 COPY --chmod=644 '.vimrc' '/etc/skel'
 ARG username='dev'
