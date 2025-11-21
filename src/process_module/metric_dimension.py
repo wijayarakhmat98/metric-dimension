@@ -19,21 +19,18 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 	if not datum:
 		return None
 	mode : List[bool] = []
-	if {'metric_dimension', 'edge_metric_dimension'} & set(datum):
-		if 'metric_dimension' in datum and datum['metric_dimension'] is None:
-			mode.append(False)
-		if 'edge_metric_dimension' in datum and datum['edge_metric_dimension'] is None:
-			mode.append(True)
-		if not mode:
-			return datum
-	else:
-		return None
+	if 'metric_dimension' in datum and datum['metric_dimension'] is None:
+		mode.append(False)
+	if 'edge_metric_dimension' in datum and datum['edge_metric_dimension'] is None:
+		mode.append(True)
+	if not mode:
+		return datum
 	if 'algorithm' in datum:
 		method = datum['algorithm']
 		if method not in metric_dimension.ALGORITHMS:
-			return None
+			return datum
 	else:
-		return None
+		return datum
 	limit, = cast(Tuple[float], option)
 	for edge in mode:
 		with timer() as total_time:
