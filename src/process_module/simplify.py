@@ -1,7 +1,7 @@
 import json
 from typing import Any, cast, Dict, List, Optional, Tuple
 
-preserve_order = True
+preserve_order = False
 header = None
 
 def decode(result : str) -> Optional[Dict[str, Any]]:

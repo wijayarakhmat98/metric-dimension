@@ -2,7 +2,7 @@ import json
 import re
 from typing import Any, cast, Dict, Optional, Tuple
 
-preserve_order = True
+preserve_order = False
 header = None
 
 def decode(result : str) -> Optional[Dict[str, Any]]:
