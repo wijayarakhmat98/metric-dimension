@@ -27,8 +27,8 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 		k0_time = internal_time[-1] if N >= 1 else None
 		k1_time = internal_time[-2] if N >= 2 else None
 		datum['MD_k'] = k
-		datum['MD_k0_time'] = k0_time
-		datum['MD_k1_time'] = k1_time
+		datum['MD_k_time'] = k0_time
+		datum['MD_k+1_time'] = k1_time
 	if 'edge_metric_dimension' in datum:
 		EMD = cast(int, datum['edge_metric_dimension'])
 		if EMD < 0:
