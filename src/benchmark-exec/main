@@ -13,7 +13,7 @@ export INPUT='benchmark-source'
 export OUTPUT='benchmark-result'
 export SATURATION=10
 
-target="${INPUT}/${NAME}.g6"
+target="${INPUT}/${NAME}.txt"
 rm -f "${target}"
 
 echo "Creating ${target} for ${NAME} job..."
