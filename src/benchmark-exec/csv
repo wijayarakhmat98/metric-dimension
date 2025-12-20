@@ -9,6 +9,6 @@ mkdir -p "${OUTPUT}"
 for source in benchmark-result/*.sorted; do
 	file="${source%%.sorted}"
 	target="${file}.csv"
-	echo "Sorting ${file}..."
+	echo "Creating CSV from ${file}..."
 	cat "${source}"  | ./process csv > "${target}"
 done
