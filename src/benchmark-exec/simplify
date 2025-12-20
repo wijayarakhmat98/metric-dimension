@@ -9,6 +9,6 @@ mkdir -p "${OUTPUT}"
 for source in benchmark-result/*.txt; do
 	file="${source%%.txt}"
 	target="${file}.simplified"
-	echo "Sorting ${file}..."
+	echo "Simplifying ${file}..."
 	cat "${source}"  | ./process simplify > "${target}"
 done
