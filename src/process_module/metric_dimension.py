@@ -38,8 +38,8 @@ def transform(datum : Optional[Dict[str, Any]], option : Tuple[Any, ...]) -> Opt
 			M = metric_dimension.graph6_decode(s)
 			DV = metric_dimension.distance_matrix(M)
 			E = metric_dimension.edges(M)
-			DE = metric_dimension.edge_distance_matrix(E, DV)
 			if edge:
+				DE = metric_dimension.edge_distance_matrix(E, DV)
 				D = DE
 			else:
 				D = DV
