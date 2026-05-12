@@ -90,7 +90,7 @@ def help() -> str:
 	return re.sub(r'\n\t\t', r'\n',
 	'''
 		usage:
-			... -a=<method>>
+			... [--timeout=<seconds>]
 
 		options:
 			--timeout=<seconds>
