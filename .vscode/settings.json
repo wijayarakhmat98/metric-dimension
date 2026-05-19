@@ -8,5 +8,6 @@
 	"files.insertFinalNewline": true,
 	"files.trimFinalNewlines": true,
 	"files.trimTrailingWhitespace": true,
-	"python.terminal.activateEnvironment": false
+	"python.terminal.activateEnvironment": false,
+	"python-envs.defaultEnvManager": "ms-python.python:system"
 }
