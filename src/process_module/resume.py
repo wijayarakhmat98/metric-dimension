@@ -56,7 +56,9 @@ def option_augment(option : Tuple[Any, ...]) -> Tuple[Any, ...]:
 	with open(log_filename, 'r') as log_file:
 		log_read = read_file(log_file)
 		with multiprocessing.Pool(processes=number_of_threads) as pool:
-			exclude = {graph for graph in set(pool.imap_unordered(extract_graph, log_read)) if graph}
+			exclude = {graph for graph in pool.imap_unordered(extract_graph, log_read) if graph}
+			pool.close()
+			pool.join()
 	option = (log_filename, number_of_threads, exclude)
 	return option
 
